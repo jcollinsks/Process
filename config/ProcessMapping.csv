@@ -1,0 +1,11 @@
+FlowName,BusinessProcess,ProcessCategory,Department,MinutesSavedPerRun,RiskCategory,RiskReductionScore,ProcessOwner,Notes
+"Invoice Processing Flow","Accounts Payable","Finance","Finance",20,"High",8,"finance@yourorg.com","Automates invoice receipt through approval"
+"Purchase Order Approval","Procurement","Finance","Procurement",15,"High",7,"procurement@yourorg.com","Routes POs through approval chain"
+"Employee Onboarding","HR Onboarding","Human Resources","HR",45,"Medium",6,"hr@yourorg.com","New hire provisioning and welcome emails"
+"Leave Request Approval","Leave Management","Human Resources","HR",10,"Low",3,"hr@yourorg.com","Routes leave requests to managers"
+"Contract Renewal Reminder","Contract Management","Legal","Legal",5,"High",8,"legal@yourorg.com","Alerts team 90/60/30 days before expiry"
+"Customer Complaint Routing","Customer Service","Operations","Support",8,"Medium",5,"support@yourorg.com","Routes complaints to appropriate team"
+"Monthly Report Generation","Reporting","Operations","Analytics",30,"Medium",4,"analytics@yourorg.com","Generates and distributes monthly KPI reports"
+"IT Ticket Escalation","IT Service Management","IT","IT",12,"Medium",5,"it@yourorg.com","Auto-escalates unresolved tickets"
+"Data Backup Notification","IT Operations","IT","IT",5,"Critical",9,"it@yourorg.com","Monitors and alerts on backup status"
+"Sales Lead Assignment","Lead Management","Sales","Sales",10,"Medium",4,"sales@yourorg.com","Distributes new leads to reps"

@@ -1,0 +1,197 @@
+// ============================================================================
+// GOVERNANCE METRICS - Flow governance and compliance measures
+// ============================================================================
+// Additional page: Governance scorecard for enterprise automation management
+// ============================================================================
+
+
+// ---------------------------------------------------------------------------
+// GOVERNANCE HEALTH INDICATORS
+// ---------------------------------------------------------------------------
+
+// Overall governance score (0-100)
+Governance Score =
+VAR SolutionScore = [Solution Coverage] * 25        // 25 pts: flows in solutions
+VAR OwnershipScore =                                 // 25 pts: no orphaned flows
+    (1 - DIVIDE([Orphaned Flows Count], [Total Cloud Flows], 0)) * 25
+VAR ProcessMappingScore = [Process Coverage] * 25    // 25 pts: flows mapped to processes
+VAR ReliabilityScore = [Success Rate] * 25           // 25 pts: flow reliability
+RETURN
+    ROUND(SolutionScore + OwnershipScore + ProcessMappingScore + ReliabilityScore, 0)
+
+Governance Score Label =
+VAR Score = [Governance Score]
+RETURN
+    IF(Score >= 90, "Excellent",
+    IF(Score >= 75, "Good",
+    IF(Score >= 60, "Needs Improvement",
+    IF(Score >= 40, "At Risk",
+    "Critical"))))
+
+// ---------------------------------------------------------------------------
+// OWNERSHIP ANALYSIS
+// ---------------------------------------------------------------------------
+
+// Flows per owner (for identifying concentration risk)
+Flows Per Owner =
+DIVIDE([Total Cloud Flows], [Unique Flow Owners], 0)
+
+// Owners with too many flows (concentration risk)
+Overloaded Owners =
+CALCULATE(
+    DISTINCTCOUNT(CloudFlows[OwnerID]),
+    FILTER(
+        VALUES(CloudFlows[OwnerID]),
+        CALCULATE(COUNTROWS(CloudFlows)) > 20
+    )
+)
+
+// Single-owner processes (bus factor risk)
+Single Owner Processes =
+CALCULATE(
+    DISTINCTCOUNT(ProcessConfiguration[BusinessProcess]),
+    FILTER(
+        VALUES(ProcessConfiguration[BusinessProcess]),
+        VAR ProcessFlows =
+            CALCULATETABLE(VALUES(ProcessConfiguration[FlowName]))
+        VAR UniqueOwners =
+            CALCULATE(
+                DISTINCTCOUNT(CloudFlows[OwnerID]),
+                TREATAS(ProcessFlows, CloudFlows[FlowName])
+            )
+        RETURN UniqueOwners = 1
+    )
+)
+
+// ---------------------------------------------------------------------------
+// STALE FLOW DETECTION
+// ---------------------------------------------------------------------------
+
+// Flows not modified in 90+ days
+Stale Flows =
+CALCULATE(
+    COUNTROWS(CloudFlows),
+    CloudFlows[FlowState] = "Activated",
+    FILTER(
+        CloudFlows,
+        DATEDIFF(CloudFlows[ModifiedOn], NOW(), DAY) > 90
+    )
+)
+
+// Active flows with no recent runs (30 days)
+Inactive Active Flows =
+CALCULATE(
+    COUNTROWS(CloudFlows),
+    CloudFlows[FlowState] = "Activated",
+    FILTER(
+        CloudFlows,
+        VAR FlowID = CloudFlows[FlowID]
+        VAR LastRun =
+            CALCULATE(
+                MAX(FlowRuns[StartedOn]),
+                FlowRuns[FlowID] = FlowID
+            )
+        RETURN ISBLANK(LastRun) || DATEDIFF(LastRun, NOW(), DAY) > 30
+    )
+)
+
+// ---------------------------------------------------------------------------
+// ENVIRONMENT GOVERNANCE
+// ---------------------------------------------------------------------------
+
+Flows Per Environment =
+DIVIDE([Total Cloud Flows], [Total Environments], 0)
+
+// Environment with most flows
+Largest Environment =
+VAR EnvFlows =
+    ADDCOLUMNS(
+        VALUES(CloudFlows[EnvironmentURL]),
+        "@FlowCount", CALCULATE(COUNTROWS(CloudFlows))
+    )
+VAR MaxFlows = MAXX(EnvFlows, [@FlowCount])
+RETURN
+    MAXX(FILTER(EnvFlows, [@FlowCount] = MaxFlows), CloudFlows[EnvironmentURL])
+
+// ---------------------------------------------------------------------------
+// DLP / CONNECTOR ANALYSIS (if clientdata is parsed)
+// ---------------------------------------------------------------------------
+
+// Unique trigger types in use
+Unique Trigger Types =
+DISTINCTCOUNT(CloudFlows[TriggerType])
+
+// Flows using manual triggers
+Manual Trigger Flows =
+CALCULATE(
+    COUNTROWS(CloudFlows),
+    CloudFlows[TriggerType] = "manual"
+)
+
+// Scheduled flows
+Scheduled Flows =
+CALCULATE(
+    COUNTROWS(CloudFlows),
+    OR(
+        CloudFlows[TriggerType] = "Recurrence",
+        CloudFlows[TriggerType] = "recurrence"
+    )
+)
+
+// ---------------------------------------------------------------------------
+// ADOPTION METRICS
+// ---------------------------------------------------------------------------
+
+// Users who created flows (makers)
+Total Makers =
+CALCULATE(
+    DISTINCTCOUNT(CloudFlows[OwnerID]),
+    NOT ISBLANK(CloudFlows[OwnerID])
+)
+
+// Maker to consumer ratio
+// (users who own flows vs total users with access)
+Active Maker Percentage =
+DIVIDE(
+    [Total Makers],
+    CALCULATE(
+        COUNTROWS(SystemUsers),
+        SystemUsers[UserStatus] = "Active"
+    ),
+    0
+)
+
+// New makers this month
+New Makers This Month =
+CALCULATE(
+    DISTINCTCOUNT(CloudFlows[OwnerID]),
+    DATESMTD(DateTable[Date]),
+    USERELATIONSHIP(DateTable[Date], CloudFlows[CreatedOn])
+)
+
+// ---------------------------------------------------------------------------
+// COMPLIANCE FLAGS
+// ---------------------------------------------------------------------------
+
+// Flows needing review (high failure rate + high risk)
+Flows Needing Review =
+CALCULATE(
+    COUNTROWS(CloudFlows),
+    FILTER(
+        CloudFlows,
+        VAR FlowID = CloudFlows[FlowID]
+        VAR FailRate =
+            DIVIDE(
+                CALCULATE(COUNTROWS(FlowRuns), FlowRuns[StatusCategory] = "Failed", FlowRuns[FlowID] = FlowID),
+                CALCULATE(COUNTROWS(FlowRuns), FlowRuns[FlowID] = FlowID),
+                0
+            )
+        VAR IsHighRisk =
+            CALCULATE(
+                COUNTROWS(ProcessConfiguration),
+                ProcessConfiguration[RiskCategory] IN {"High", "Critical"},
+                ProcessConfiguration[FlowName] = CloudFlows[FlowName]
+            ) > 0
+        RETURN FailRate > 0.1 && IsHighRisk
+    )
+)

@@ -1,0 +1,6 @@
+RiskCategory,RiskLevel,Description,IncidentCostEstimate,ManualErrorProbability,Color
+"Critical",5,"Process failure causes regulatory violations, data breaches, or significant financial loss",10000,0.10,"#D13438"
+"High",4,"Process failure causes operational disruption, SLA breaches, or customer impact",5000,0.07,"#FF8C00"
+"Medium",3,"Process failure causes delays, rework, or internal inefficiency",1000,0.05,"#FFB900"
+"Low",2,"Process failure causes minor inconvenience with easy manual recovery",200,0.03,"#107C10"
+"Informational",1,"Process is a nice-to-have automation with minimal business impact",50,0.01,"#0078D4"

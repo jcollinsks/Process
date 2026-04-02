@@ -1,0 +1,158 @@
+// ============================================================================
+// TIME INTELLIGENCE - Period-over-period comparisons
+// ============================================================================
+// Requires the DateTable to be marked as a Date Table in Power BI.
+// Model view > Select DateTable > Table tools > Mark as date table > Date column
+// ============================================================================
+
+
+// ---------------------------------------------------------------------------
+// PERIOD TOTALS
+// ---------------------------------------------------------------------------
+
+Runs YTD =
+CALCULATE(
+    COUNTROWS(FlowRuns),
+    DATESYTD(DateTable[Date])
+)
+
+Runs MTD =
+CALCULATE(
+    COUNTROWS(FlowRuns),
+    DATESMTD(DateTable[Date])
+)
+
+Runs QTD =
+CALCULATE(
+    COUNTROWS(FlowRuns),
+    DATESQTD(DateTable[Date])
+)
+
+// ---------------------------------------------------------------------------
+// PREVIOUS PERIOD COMPARISONS
+// ---------------------------------------------------------------------------
+
+Runs Previous Year =
+CALCULATE(
+    COUNTROWS(FlowRuns),
+    SAMEPERIODLASTYEAR(DateTable[Date])
+)
+
+Runs YoY Change % =
+VAR CurrentYTD = [Runs YTD]
+VAR PreviousYTD =
+    CALCULATE(
+        COUNTROWS(FlowRuns),
+        DATESYTD(SAMEPERIODLASTYEAR(DateTable[Date]))
+    )
+RETURN
+    DIVIDE(CurrentYTD - PreviousYTD, PreviousYTD, 0)
+
+Success Rate Previous Month =
+VAR PrevTotal =
+    CALCULATE(COUNTROWS(FlowRuns), DATEADD(DateTable[Date], -1, MONTH))
+VAR PrevSuccess =
+    CALCULATE(
+        COUNTROWS(FlowRuns),
+        FlowRuns[StatusCategory] = "Succeeded",
+        DATEADD(DateTable[Date], -1, MONTH)
+    )
+RETURN
+    DIVIDE(PrevSuccess, PrevTotal, 0)
+
+Success Rate MoM Change =
+VAR CurrentRate =
+    CALCULATE([Success Rate], DATESMTD(DateTable[Date]))
+RETURN
+    CurrentRate - [Success Rate Previous Month]
+
+// ---------------------------------------------------------------------------
+// ROLLING AVERAGES
+// ---------------------------------------------------------------------------
+
+Rolling 30 Day Avg Daily Runs =
+AVERAGEX(
+    DATESINPERIOD(DateTable[Date], MAX(DateTable[Date]), -30, DAY),
+    CALCULATE(COUNTROWS(FlowRuns))
+)
+
+Rolling 7 Day Failure Rate =
+VAR Period = DATESINPERIOD(DateTable[Date], MAX(DateTable[Date]), -7, DAY)
+VAR TotalInPeriod =
+    CALCULATE(COUNTROWS(FlowRuns), Period)
+VAR FailedInPeriod =
+    CALCULATE(
+        COUNTROWS(FlowRuns),
+        FlowRuns[StatusCategory] = "Failed",
+        Period
+    )
+RETURN
+    DIVIDE(FailedInPeriod, TotalInPeriod, 0)
+
+// ---------------------------------------------------------------------------
+// GROWTH METRICS
+// ---------------------------------------------------------------------------
+
+New Flows This Month =
+CALCULATE(
+    COUNTROWS(CloudFlows),
+    DATESMTD(DateTable[Date]),
+    USERELATIONSHIP(DateTable[Date], CloudFlows[CreatedOn])
+)
+
+New Flows Last Month =
+CALCULATE(
+    COUNTROWS(CloudFlows),
+    DATEADD(DateTable[Date], -1, MONTH),
+    USERELATIONSHIP(DateTable[Date], CloudFlows[CreatedOn])
+)
+
+Flow Growth Rate =
+DIVIDE(
+    [New Flows This Month] - [New Flows Last Month],
+    [New Flows Last Month],
+    0
+)
+
+// ---------------------------------------------------------------------------
+// PEAK USAGE
+// ---------------------------------------------------------------------------
+
+Peak Run Hour =
+VAR HourlyRuns =
+    ADDCOLUMNS(
+        VALUES(FlowRuns[RunHour]),
+        "@RunCount", CALCULATE(COUNTROWS(FlowRuns))
+    )
+VAR MaxRuns = MAXX(HourlyRuns, [@RunCount])
+RETURN
+    MAXX(FILTER(HourlyRuns, [@RunCount] = MaxRuns), FlowRuns[RunHour])
+
+Peak Run Day =
+VAR DailyRuns =
+    ADDCOLUMNS(
+        VALUES(FlowRuns[DayOfWeek]),
+        "@RunCount", CALCULATE(COUNTROWS(FlowRuns))
+    )
+VAR MaxRuns = MAXX(DailyRuns, [@RunCount])
+RETURN
+    MAXX(FILTER(DailyRuns, [@RunCount] = MaxRuns), FlowRuns[DayOfWeek])
+
+// ---------------------------------------------------------------------------
+// SLA METRICS
+// ---------------------------------------------------------------------------
+
+// Configurable SLA threshold (in minutes)
+// Create a What-If parameter named SLAThreshold (1-60, default 5)
+
+SLA Met Runs =
+VAR SLAMinutes = 5 // Replace with: SELECTEDVALUE('SLAThreshold'[SLAThreshold Value], 5)
+RETURN
+    CALCULATE(
+        COUNTROWS(FlowRuns),
+        FlowRuns[DurationMinutes] <= SLAMinutes,
+        FlowRuns[StatusCategory] = "Succeeded"
+    )
+
+SLA Compliance Rate =
+DIVIDE([SLA Met Runs], [Succeeded Runs], 0)

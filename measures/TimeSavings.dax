@@ -1,0 +1,175 @@
+// ============================================================================
+// TIME SAVINGS - Automation value calculations
+// ============================================================================
+// These measures calculate estimated time and cost savings from automation.
+// They use the ProcessConfiguration table for per-process estimates,
+// with a fallback to the global MinutesPerManualRun parameter.
+// ============================================================================
+
+
+// ---------------------------------------------------------------------------
+// PER-RUN TIME SAVINGS
+// ---------------------------------------------------------------------------
+
+// Minutes saved per run (from config or default parameter)
+Minutes Saved Per Run =
+VAR ConfiguredMinutes =
+    LOOKUPVALUE(
+        ProcessConfiguration[MinutesSavedPerRun],
+        ProcessConfiguration[FlowName],
+        SELECTEDVALUE(CloudFlows[FlowName])
+    )
+// Fallback to 15 minutes default if no parameter is set
+VAR DefaultMinutes = 15
+RETURN
+    IF(NOT ISBLANK(ConfiguredMinutes), ConfiguredMinutes, DefaultMinutes)
+
+// ---------------------------------------------------------------------------
+// AGGREGATE TIME SAVINGS
+// ---------------------------------------------------------------------------
+
+Total Minutes Saved =
+SUMX(
+    FlowRuns,
+    IF(
+        FlowRuns[StatusCategory] = "Succeeded",
+        VAR FlowName =
+            LOOKUPVALUE(
+                CloudFlows[FlowName],
+                CloudFlows[FlowID],
+                FlowRuns[FlowID]
+            )
+        VAR ConfigMinutes =
+            LOOKUPVALUE(
+                ProcessConfiguration[MinutesSavedPerRun],
+                ProcessConfiguration[FlowName],
+                FlowName
+            )
+        RETURN IF(NOT ISBLANK(ConfigMinutes), ConfigMinutes, 15),
+        0
+    )
+)
+
+Total Hours Saved =
+DIVIDE([Total Minutes Saved], 60, 0)
+
+Total Days Saved =
+DIVIDE([Total Hours Saved], 8, 0)
+
+Total FTE Equivalent =
+// Full-time equivalent based on 2080 working hours per year
+DIVIDE([Total Hours Saved], 2080, 0)
+
+// ---------------------------------------------------------------------------
+// COST SAVINGS
+// ---------------------------------------------------------------------------
+
+// Uses HourlyLaborCost parameter (default $50/hour)
+Estimated Cost Savings =
+VAR HourlyCost = 50 // Replace with parameter: HourlyLaborCost
+RETURN
+    [Total Hours Saved] * HourlyCost
+
+Monthly Cost Savings =
+CALCULATE(
+    [Estimated Cost Savings],
+    DATESMTD(DateTable[Date])
+)
+
+Annual Cost Savings Projection =
+[Monthly Cost Savings] * 12
+
+// ---------------------------------------------------------------------------
+// TIME SAVINGS BY BUSINESS PROCESS
+// ---------------------------------------------------------------------------
+
+Process Time Saved (Hours) =
+VAR CurrentProcess = SELECTEDVALUE(ProcessConfiguration[BusinessProcess])
+VAR FlowsInProcess =
+    CALCULATETABLE(
+        VALUES(ProcessConfiguration[FlowName]),
+        ProcessConfiguration[BusinessProcess] = CurrentProcess
+    )
+VAR SuccessfulRuns =
+    CALCULATE(
+        COUNTROWS(FlowRuns),
+        FlowRuns[StatusCategory] = "Succeeded",
+        TREATAS(FlowsInProcess, CloudFlows[FlowName])
+    )
+VAR AvgMinutes =
+    CALCULATE(
+        AVERAGE(ProcessConfiguration[MinutesSavedPerRun]),
+        ProcessConfiguration[BusinessProcess] = CurrentProcess
+    )
+RETURN
+    DIVIDE(SuccessfulRuns * AvgMinutes, 60, 0)
+
+// ---------------------------------------------------------------------------
+// TIME SAVINGS TREND
+// ---------------------------------------------------------------------------
+
+Monthly Hours Saved =
+CALCULATE([Total Hours Saved], DATESMTD(DateTable[Date]))
+
+Cumulative Hours Saved =
+CALCULATE(
+    [Total Hours Saved],
+    FILTER(
+        ALL(DateTable[Date]),
+        DateTable[Date] <= MAX(DateTable[Date])
+    )
+)
+
+// ---------------------------------------------------------------------------
+// ROI CALCULATIONS
+// ---------------------------------------------------------------------------
+
+// Estimated Power Automate license cost per month (configurable)
+// Adjust this value based on your actual licensing costs
+Automation Investment =
+VAR PerFlowCostMonthly = 15 // approx per-flow plan cost
+VAR PremiumPerUserCostMonthly = 40 // per-user plan cost
+VAR EstimatedActiveUsers = [Unique Flow Owners]
+RETURN
+    // Simple estimate - replace with actual costs
+    EstimatedActiveUsers * PremiumPerUserCostMonthly
+
+ROI Percentage =
+DIVIDE(
+    [Estimated Cost Savings] - [Automation Investment],
+    [Automation Investment],
+    0
+)
+
+Payback Period (Months) =
+DIVIDE(
+    [Automation Investment] * 12,
+    [Annual Cost Savings Projection],
+    BLANK()
+)
+
+// ---------------------------------------------------------------------------
+// EFFICIENCY METRICS
+// ---------------------------------------------------------------------------
+
+Automation Efficiency =
+// Ratio of time saved vs time spent running flows
+VAR TimeSavedMinutes = [Total Minutes Saved]
+VAR TimeSpentMinutes = SUM(FlowRuns[DurationMinutes])
+RETURN
+    DIVIDE(TimeSavedMinutes, TimeSpentMinutes, 0)
+
+Value Per Run =
+DIVIDE([Estimated Cost Savings], [Succeeded Runs], 0)
+
+// ---------------------------------------------------------------------------
+// WHAT-IF: CONFIGURABLE TIME SAVINGS SCENARIOS
+// ---------------------------------------------------------------------------
+// Create a What-If parameter in Power BI:
+// Modeling > New Parameter > What If
+// Name: TimeSavingsMultiplier, Min: 0.5, Max: 3.0, Increment: 0.1, Default: 1.0
+//
+// Then use this measure:
+
+// Adjusted Time Savings =
+// [Total Hours Saved] * SELECTEDVALUE('TimeSavingsMultiplier'[TimeSavingsMultiplier Value], 1)

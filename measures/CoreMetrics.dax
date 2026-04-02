@@ -1,0 +1,149 @@
+// ============================================================================
+// CORE METRICS - Foundational KPI measures
+// ============================================================================
+// Add these measures to your CloudFlows table (or a dedicated Measures table).
+// In Power BI: Modeling > New Measure, then paste each formula.
+// ============================================================================
+
+
+// ---------------------------------------------------------------------------
+// ENVIRONMENT METRICS
+// ---------------------------------------------------------------------------
+
+Total Environments =
+DISTINCTCOUNT(CloudFlows[EnvironmentURL])
+
+// ---------------------------------------------------------------------------
+// FLOW COUNTS
+// ---------------------------------------------------------------------------
+
+Total Cloud Flows =
+COUNTROWS(CloudFlows)
+
+Total Active Flows =
+CALCULATE(
+    COUNTROWS(CloudFlows),
+    CloudFlows[FlowState] = "Activated"
+)
+
+Total Draft Flows =
+CALCULATE(
+    COUNTROWS(CloudFlows),
+    CloudFlows[FlowState] = "Draft"
+)
+
+Total Suspended Flows =
+CALCULATE(
+    COUNTROWS(CloudFlows),
+    CloudFlows[FlowState] = "Suspended"
+)
+
+Active Flow Percentage =
+DIVIDE([Total Active Flows], [Total Cloud Flows], 0)
+
+Total Desktop Flows =
+COUNTROWS(DesktopFlows)
+
+Total Business Process Flows =
+COUNTROWS(BusinessProcessFlows)
+
+Total All Workflows =
+[Total Cloud Flows] + [Total Desktop Flows] + [Total Business Process Flows]
+
+// ---------------------------------------------------------------------------
+// FLOW RUN COUNTS
+// ---------------------------------------------------------------------------
+
+Total Flow Runs =
+COUNTROWS(FlowRuns)
+
+Succeeded Runs =
+CALCULATE(
+    COUNTROWS(FlowRuns),
+    FlowRuns[StatusCategory] = "Succeeded"
+)
+
+Failed Runs =
+CALCULATE(
+    COUNTROWS(FlowRuns),
+    FlowRuns[StatusCategory] = "Failed"
+)
+
+Cancelled Runs =
+CALCULATE(
+    COUNTROWS(FlowRuns),
+    FlowRuns[StatusCategory] = "Cancelled"
+)
+
+Timed Out Runs =
+CALCULATE(
+    COUNTROWS(FlowRuns),
+    FlowRuns[StatusCategory] = "Timed Out"
+)
+
+In Progress Runs =
+CALCULATE(
+    COUNTROWS(FlowRuns),
+    FlowRuns[StatusCategory] = "In Progress"
+)
+
+// ---------------------------------------------------------------------------
+// SUCCESS / FAILURE RATES
+// ---------------------------------------------------------------------------
+
+Success Rate =
+DIVIDE([Succeeded Runs], [Total Flow Runs], 0)
+
+Failure Rate =
+DIVIDE([Failed Runs], [Total Flow Runs], 0)
+
+// ---------------------------------------------------------------------------
+// UNIQUE COUNTS
+// ---------------------------------------------------------------------------
+
+Unique Flow Owners =
+DISTINCTCOUNT(CloudFlows[OwnerID])
+
+Flows with Runs =
+CALCULATE(
+    DISTINCTCOUNT(FlowRuns[FlowID]),
+    FlowRuns[FlowID] <> BLANK()
+)
+
+Flows Without Runs =
+[Total Active Flows] - [Flows with Runs]
+
+// ---------------------------------------------------------------------------
+// SOLUTION AWARENESS
+// ---------------------------------------------------------------------------
+
+Flows in Solutions =
+CALCULATE(
+    COUNTROWS(CloudFlows),
+    CloudFlows[IsInSolution] = TRUE()
+)
+
+Flows Not in Solutions =
+CALCULATE(
+    COUNTROWS(CloudFlows),
+    CloudFlows[IsInSolution] = FALSE()
+)
+
+Solution Coverage =
+DIVIDE([Flows in Solutions], [Total Cloud Flows], 0)
+
+// ---------------------------------------------------------------------------
+// MAPPED PROCESSES
+// ---------------------------------------------------------------------------
+
+Mapped Business Processes =
+DISTINCTCOUNT(ProcessConfiguration[BusinessProcess])
+
+Mapped Flows =
+COUNTROWS(ProcessConfiguration)
+
+Unmapped Flows =
+[Total Cloud Flows] - [Mapped Flows]
+
+Process Coverage =
+DIVIDE([Mapped Flows], [Total Cloud Flows], 0)

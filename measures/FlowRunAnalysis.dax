@@ -1,0 +1,193 @@
+// ============================================================================
+// FLOW RUN ANALYSIS - Detailed run performance measures
+// ============================================================================
+
+
+// ---------------------------------------------------------------------------
+// DURATION METRICS
+// ---------------------------------------------------------------------------
+
+Avg Run Duration (Minutes) =
+AVERAGE(FlowRuns[DurationMinutes])
+
+Median Run Duration (Minutes) =
+MEDIAN(FlowRuns[DurationMinutes])
+
+Max Run Duration (Minutes) =
+MAX(FlowRuns[DurationMinutes])
+
+P95 Run Duration (Minutes) =
+PERCENTILE.INC(FlowRuns[DurationMinutes], 0.95)
+
+Total Run Duration (Hours) =
+DIVIDE(SUM(FlowRuns[DurationSeconds]), 3600, 0)
+
+// ---------------------------------------------------------------------------
+// RUNS BY TIME PERIOD
+// ---------------------------------------------------------------------------
+
+Runs Today =
+CALCULATE(
+    COUNTROWS(FlowRuns),
+    FlowRuns[RunDate] = TODAY()
+)
+
+Runs This Week =
+CALCULATE(
+    COUNTROWS(FlowRuns),
+    DATESINPERIOD(DateTable[Date], TODAY(), -7, DAY)
+)
+
+Runs This Month =
+CALCULATE(
+    COUNTROWS(FlowRuns),
+    DATESMTD(DateTable[Date])
+)
+
+Runs Last 30 Days =
+CALCULATE(
+    COUNTROWS(FlowRuns),
+    DATESINPERIOD(DateTable[Date], TODAY(), -30, DAY)
+)
+
+// ---------------------------------------------------------------------------
+// TREND COMPARISONS
+// ---------------------------------------------------------------------------
+
+Runs Previous Month =
+CALCULATE(
+    COUNTROWS(FlowRuns),
+    DATEADD(DateTable[Date], -1, MONTH)
+)
+
+Runs MoM Change =
+[Runs This Month] - [Runs Previous Month]
+
+Runs MoM Change % =
+DIVIDE([Runs MoM Change], [Runs Previous Month], 0)
+
+Failure Rate This Month =
+VAR TotalThisMonth = [Runs This Month]
+VAR FailedThisMonth =
+    CALCULATE(
+        COUNTROWS(FlowRuns),
+        FlowRuns[StatusCategory] = "Failed",
+        DATESMTD(DateTable[Date])
+    )
+RETURN
+    DIVIDE(FailedThisMonth, TotalThisMonth, 0)
+
+Failure Rate Previous Month =
+VAR TotalPrev =
+    CALCULATE(
+        COUNTROWS(FlowRuns),
+        DATEADD(DateTable[Date], -1, MONTH)
+    )
+VAR FailedPrev =
+    CALCULATE(
+        COUNTROWS(FlowRuns),
+        FlowRuns[StatusCategory] = "Failed",
+        DATEADD(DateTable[Date], -1, MONTH)
+    )
+RETURN
+    DIVIDE(FailedPrev, TotalPrev, 0)
+
+// ---------------------------------------------------------------------------
+// BUSINESS HOURS ANALYSIS
+// ---------------------------------------------------------------------------
+
+Business Hours Runs =
+CALCULATE(
+    COUNTROWS(FlowRuns),
+    FlowRuns[IsBusinessHours] = TRUE()
+)
+
+After Hours Runs =
+CALCULATE(
+    COUNTROWS(FlowRuns),
+    FlowRuns[IsBusinessHours] = FALSE()
+)
+
+Business Hours Run Percentage =
+DIVIDE([Business Hours Runs], [Total Flow Runs], 0)
+
+// ---------------------------------------------------------------------------
+// ERROR ANALYSIS
+// ---------------------------------------------------------------------------
+
+Unique Error Codes =
+DISTINCTCOUNT(FlowRuns[ErrorCode])
+
+Most Common Error =
+VAR ErrorTable =
+    ADDCOLUMNS(
+        VALUES(FlowRuns[ErrorCategory]),
+        "@Count", CALCULATE(COUNTROWS(FlowRuns))
+    )
+VAR MaxCount = MAXX(ErrorTable, [@Count])
+RETURN
+    MAXX(FILTER(ErrorTable, [@Count] = MaxCount), FlowRuns[ErrorCategory])
+
+Consecutive Failures =
+// Use this to identify flows with repeated failures
+VAR CurrentFlow = SELECTEDVALUE(CloudFlows[FlowID])
+VAR RecentRuns =
+    TOPN(
+        5,
+        FILTER(FlowRuns, FlowRuns[FlowID] = CurrentFlow),
+        FlowRuns[StartedOn], DESC
+    )
+RETURN
+    COUNTROWS(FILTER(RecentRuns, [StatusCategory] = "Failed"))
+
+// ---------------------------------------------------------------------------
+// FLOW HEALTH SCORE (0-100)
+// ---------------------------------------------------------------------------
+
+Flow Health Score =
+VAR SuccessRateScore = [Success Rate] * 40
+VAR NoTimeoutScore =
+    (1 - DIVIDE([Timed Out Runs], [Total Flow Runs], 0)) * 20
+VAR AvgDuration = [Avg Run Duration (Minutes)]
+VAR DurationScore =
+    IF(AvgDuration <= 1, 20,
+    IF(AvgDuration <= 5, 15,
+    IF(AvgDuration <= 15, 10,
+    IF(AvgDuration <= 60, 5, 0))))
+VAR ConsistencyScore =
+    (1 - DIVIDE(
+        STDEV.P(FlowRuns[DurationMinutes]),
+        [Avg Run Duration (Minutes)],
+        0
+    )) * 20
+RETURN
+    MIN(ROUND(SuccessRateScore + NoTimeoutScore + DurationScore + MAX(ConsistencyScore, 0), 0), 100)
+
+// ---------------------------------------------------------------------------
+// DAILY RUN TREND (for line chart)
+// ---------------------------------------------------------------------------
+
+Daily Runs =
+CALCULATE(
+    COUNTROWS(FlowRuns),
+    LASTDATE(DateTable[Date])
+)
+
+Daily Success Rate =
+VAR DailyTotal =
+    CALCULATE(COUNTROWS(FlowRuns), LASTDATE(DateTable[Date]))
+VAR DailySuccess =
+    CALCULATE(
+        COUNTROWS(FlowRuns),
+        FlowRuns[StatusCategory] = "Succeeded",
+        LASTDATE(DateTable[Date])
+    )
+RETURN
+    DIVIDE(DailySuccess, DailyTotal, BLANK())
+
+// Rolling 7-Day Average Runs =
+Rolling 7 Day Avg Runs =
+AVERAGEX(
+    DATESINPERIOD(DateTable[Date], MAX(DateTable[Date]), -7, DAY),
+    [Daily Runs]
+)

@@ -1,0 +1,209 @@
+// ============================================================================
+// RISK ESTIMATION - Assess automation value through risk reduction
+// ============================================================================
+// Risk categories are set in the ProcessConfiguration table.
+// Each process gets a RiskCategory (High/Medium/Low) and
+// a RiskReductionScore (1-10) representing how much risk
+// the automation mitigates.
+//
+// Risk dimensions:
+//   1. Compliance Risk - manual process prone to compliance violations
+//   2. Error Risk - manual process prone to human errors
+//   3. Delay Risk - manual process causes bottlenecks/delays
+//   4. Data Risk - manual process risks data quality issues
+// ============================================================================
+
+
+// ---------------------------------------------------------------------------
+// RISK SCORE CALCULATIONS
+// ---------------------------------------------------------------------------
+
+// Numeric value for risk categories
+Risk Category Value =
+SWITCH(
+    SELECTEDVALUE(ProcessConfiguration[RiskCategory]),
+    "Critical", 10,
+    "High", 8,
+    "Medium", 5,
+    "Low", 2,
+    0
+)
+
+// Weighted risk reduction score per process
+Process Risk Reduction Score =
+VAR RiskScore = SELECTEDVALUE(ProcessConfiguration[RiskReductionScore], 0)
+VAR SuccessRate =
+    VAR FlowsInProcess =
+        CALCULATETABLE(
+            VALUES(ProcessConfiguration[FlowName]),
+            NOT ISBLANK(ProcessConfiguration[FlowName])
+        )
+    VAR TotalRuns =
+        CALCULATE(
+            COUNTROWS(FlowRuns),
+            TREATAS(FlowsInProcess, CloudFlows[FlowName])
+        )
+    VAR SuccessfulRuns =
+        CALCULATE(
+            COUNTROWS(FlowRuns),
+            FlowRuns[StatusCategory] = "Succeeded",
+            TREATAS(FlowsInProcess, CloudFlows[FlowName])
+        )
+    RETURN DIVIDE(SuccessfulRuns, TotalRuns, 0)
+RETURN
+    RiskScore * SuccessRate
+
+// ---------------------------------------------------------------------------
+// AGGREGATE RISK METRICS
+// ---------------------------------------------------------------------------
+
+Total Risk Reduction Score =
+SUMX(
+    ProcessConfiguration,
+    [Process Risk Reduction Score]
+)
+
+Max Possible Risk Score =
+SUMX(
+    ProcessConfiguration,
+    ProcessConfiguration[RiskReductionScore]
+)
+
+Risk Reduction Achievement =
+DIVIDE([Total Risk Reduction Score], [Max Possible Risk Score], 0)
+
+// ---------------------------------------------------------------------------
+// RISK BY CATEGORY
+// ---------------------------------------------------------------------------
+
+High Risk Processes =
+CALCULATE(
+    COUNTROWS(ProcessConfiguration),
+    ProcessConfiguration[RiskCategory] IN {"High", "Critical"}
+)
+
+High Risk Automated Successfully =
+CALCULATE(
+    COUNTROWS(ProcessConfiguration),
+    ProcessConfiguration[RiskCategory] IN {"High", "Critical"},
+    FILTER(
+        ProcessConfiguration,
+        VAR FlowName = ProcessConfiguration[FlowName]
+        VAR TotalRuns =
+            CALCULATE(COUNTROWS(FlowRuns), CloudFlows[FlowName] = FlowName)
+        VAR SuccessRuns =
+            CALCULATE(
+                COUNTROWS(FlowRuns),
+                FlowRuns[StatusCategory] = "Succeeded",
+                CloudFlows[FlowName] = FlowName
+            )
+        RETURN DIVIDE(SuccessRuns, TotalRuns, 0) >= 0.95
+    )
+)
+
+// ---------------------------------------------------------------------------
+// RISK VALUE CALCULATION
+// ---------------------------------------------------------------------------
+
+// Estimated monetary value of risk reduction
+// Based on: potential cost of manual error * probability * frequency
+Risk Reduction Value =
+SUMX(
+    ProcessConfiguration,
+    VAR RiskScore = ProcessConfiguration[RiskReductionScore]
+    VAR RiskCategoryVal =
+        SWITCH(
+            ProcessConfiguration[RiskCategory],
+            "Critical", 10000,  // potential cost of incident
+            "High", 5000,
+            "Medium", 1000,
+            "Low", 200,
+            0
+        )
+    VAR FlowName = ProcessConfiguration[FlowName]
+    VAR SuccessfulRuns =
+        CALCULATE(
+            COUNTROWS(FlowRuns),
+            FlowRuns[StatusCategory] = "Succeeded",
+            CloudFlows[FlowName] = FlowName
+        )
+    VAR ManualErrorProbability = 0.05  // 5% chance of error per manual execution
+    RETURN
+        SuccessfulRuns * ManualErrorProbability * RiskCategoryVal * (RiskScore / 10)
+)
+
+Monthly Risk Reduction Value =
+CALCULATE(
+    [Risk Reduction Value],
+    DATESMTD(DateTable[Date])
+)
+
+Annual Risk Reduction Value =
+[Monthly Risk Reduction Value] * 12
+
+// ---------------------------------------------------------------------------
+// RISK HEAT MAP DATA
+// ---------------------------------------------------------------------------
+
+// Risk level for conditional formatting (1-5 scale)
+Process Risk Level =
+VAR RiskScore = SELECTEDVALUE(ProcessConfiguration[RiskReductionScore], 0)
+VAR Category = SELECTEDVALUE(ProcessConfiguration[RiskCategory], "Low")
+VAR CategoryMultiplier =
+    SWITCH(Category, "Critical", 1.0, "High", 0.8, "Medium", 0.5, "Low", 0.2, 0.1)
+VAR FailureRisk =
+    1 - DIVIDE([Succeeded Runs], [Total Flow Runs], 1)
+RETURN
+    ROUND((CategoryMultiplier * 5) + (FailureRisk * 5), 0)
+
+// ---------------------------------------------------------------------------
+// COMPLIANCE & GOVERNANCE RISK
+// ---------------------------------------------------------------------------
+
+// Flows at governance risk (not in solution, no owner mapping, etc.)
+Governance Risk Score =
+VAR UnmanagedFlows = [Flows Not in Solutions]
+VAR OrphanedFlows = [Orphaned Flows Count]
+VAR HighFailureFlows =
+    CALCULATE(
+        COUNTROWS(CloudFlows),
+        FILTER(
+            CloudFlows,
+            VAR FlowID = CloudFlows[FlowID]
+            VAR FailRate =
+                DIVIDE(
+                    CALCULATE(COUNTROWS(FlowRuns), FlowRuns[StatusCategory] = "Failed", FlowRuns[FlowID] = FlowID),
+                    CALCULATE(COUNTROWS(FlowRuns), FlowRuns[FlowID] = FlowID),
+                    0
+                )
+            RETURN FailRate > 0.2
+        )
+    )
+RETURN
+    UnmanagedFlows + (OrphanedFlows * 2) + (HighFailureFlows * 3)
+
+// Orphaned flows (owner is disabled)
+Orphaned Flows Count =
+CALCULATE(
+    COUNTROWS(CloudFlows),
+    FILTER(
+        CloudFlows,
+        VAR OwnerStatus =
+            LOOKUPVALUE(
+                SystemUsers[UserStatus],
+                SystemUsers[UserID],
+                CloudFlows[OwnerID]
+            )
+        RETURN OwnerStatus = "Disabled"
+    )
+)
+
+// ---------------------------------------------------------------------------
+// TOTAL AUTOMATION VALUE (Time Savings + Risk Reduction)
+// ---------------------------------------------------------------------------
+
+Total Automation Value =
+[Estimated Cost Savings] + [Risk Reduction Value]
+
+Monthly Automation Value =
+[Monthly Cost Savings] + [Monthly Risk Reduction Value]
