@@ -7,5 +7,27 @@
       "type": "SharedResources"
     }
   },
-  "layoutOptimization": "None"
+  "layoutOptimization": "None",
+  "resourcePackages": [
+    {
+      "name": "SharedResources",
+      "type": "SharedResources",
+      "items": [
+        {
+          "name": "CY24SU06",
+          "path": "BaseThemes/CY24SU06.json",
+          "type": "BaseTheme"
+        }
+      ]
+    }
+  ],
+  "settings": {
+    "isPersistentUserStateDisabled": true,
+    "useStylableVisualContainerHeader": true,
+    "defaultFilterActionIsDataFilter": true,
+    "defaultDrillFilterOtherVisuals": true,
+    "allowChangeFilterTypes": true,
+    "useEnhancedTooltips": true,
+    "useDefaultAggregateDisplayName": true
+  }
 }
