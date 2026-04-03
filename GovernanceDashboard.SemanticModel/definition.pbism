@@ -1,7 +1,3 @@
 {
-  "version": "1.0",
-  "datasetReference": {
-    "byPath": null,
-    "byConnection": null
-  }
+  "version": "1.0"
 }
