@@ -1,0 +1,38 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/1.0.0/schema.json",
+  "name": "slicerStatus",
+  "position": {
+    "x": 790,
+    "y": 220,
+    "z": 21,
+    "width": 230,
+    "height": 100,
+    "tabOrder": 21000
+  },
+  "visual": {
+    "visualType": "slicer",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "FlowRuns"
+                    }
+                  },
+                  "Property": "StatusCategory"
+                }
+              },
+              "queryRef": "FlowRuns.StatusCategory",
+              "nativeQueryRef": "StatusCategory"
+            }
+          ]
+        }
+      }
+    },
+    "objects": {}
+  }
+}

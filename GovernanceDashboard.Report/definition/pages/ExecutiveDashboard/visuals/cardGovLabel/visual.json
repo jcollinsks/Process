@@ -1,0 +1,38 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/1.0.0/schema.json",
+  "name": "cardGovLabel",
+  "position": {
+    "x": 1035,
+    "y": 550,
+    "z": 27,
+    "width": 235,
+    "height": 90,
+    "tabOrder": 27000
+  },
+  "visual": {
+    "visualType": "card",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Governance Label"
+                }
+              },
+              "queryRef": "_Measures.Governance Label",
+              "nativeQueryRef": "Governance Label"
+            }
+          ]
+        }
+      }
+    },
+    "objects": {}
+  }
+}

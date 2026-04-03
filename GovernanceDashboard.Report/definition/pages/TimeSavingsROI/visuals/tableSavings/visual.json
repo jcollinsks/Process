@@ -1,0 +1,122 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/1.0.0/schema.json",
+  "name": "tableSavings",
+  "position": {
+    "x": 10,
+    "y": 400,
+    "z": 12,
+    "width": 1260,
+    "height": 310,
+    "tabOrder": 12000
+  },
+  "visual": {
+    "visualType": "tableEx",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "ProcessConfiguration"
+                    }
+                  },
+                  "Property": "FlowName"
+                }
+              },
+              "queryRef": "ProcessConfiguration.FlowName",
+              "nativeQueryRef": "FlowName"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "ProcessConfiguration"
+                    }
+                  },
+                  "Property": "BusinessProcess"
+                }
+              },
+              "queryRef": "ProcessConfiguration.BusinessProcess",
+              "nativeQueryRef": "BusinessProcess"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "ProcessConfiguration"
+                    }
+                  },
+                  "Property": "Department"
+                }
+              },
+              "queryRef": "ProcessConfiguration.Department",
+              "nativeQueryRef": "Department"
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "ProcessConfiguration"
+                    }
+                  },
+                  "Property": "MinutesSavedPerRun"
+                }
+              },
+              "queryRef": "ProcessConfiguration.MinutesSavedPerRun",
+              "nativeQueryRef": "MinutesSavedPerRun"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Succeeded Runs"
+                }
+              },
+              "queryRef": "_Measures.Succeeded Runs",
+              "nativeQueryRef": "Succeeded Runs"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Total Hours Saved"
+                }
+              },
+              "queryRef": "_Measures.Total Hours Saved",
+              "nativeQueryRef": "Total Hours Saved"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Cost Savings"
+                }
+              },
+              "queryRef": "_Measures.Cost Savings",
+              "nativeQueryRef": "Cost Savings"
+            }
+          ]
+        }
+      }
+    },
+    "objects": {}
+  }
+}

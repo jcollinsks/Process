@@ -1,0 +1,38 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/1.0.0/schema.json",
+  "name": "slicerEnv",
+  "position": {
+    "x": 790,
+    "y": 110,
+    "z": 20,
+    "width": 480,
+    "height": 100,
+    "tabOrder": 20000
+  },
+  "visual": {
+    "visualType": "slicer",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "CloudFlows"
+                    }
+                  },
+                  "Property": "EnvironmentURL"
+                }
+              },
+              "queryRef": "CloudFlows.EnvironmentURL",
+              "nativeQueryRef": "EnvironmentURL"
+            }
+          ]
+        }
+      }
+    },
+    "objects": {}
+  }
+}

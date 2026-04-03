@@ -1,0 +1,70 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/1.0.0/schema.json",
+  "name": "trendDailyRuns",
+  "position": {
+    "x": 10,
+    "y": 460,
+    "z": 13,
+    "width": 760,
+    "height": 250,
+    "tabOrder": 13000
+  },
+  "visual": {
+    "visualType": "lineChart",
+    "query": {
+      "queryState": {
+        "Category": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "DateTable"
+                    }
+                  },
+                  "Property": "Date"
+                }
+              },
+              "queryRef": "DateTable.Date",
+              "nativeQueryRef": "Date"
+            }
+          ]
+        },
+        "Y": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Daily Runs"
+                }
+              },
+              "queryRef": "_Measures.Daily Runs",
+              "nativeQueryRef": "Daily Runs"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Rolling 7d Avg Runs"
+                }
+              },
+              "queryRef": "_Measures.Rolling 7d Avg Runs",
+              "nativeQueryRef": "Rolling 7d Avg Runs"
+            }
+          ]
+        }
+      }
+    },
+    "objects": {}
+  }
+}

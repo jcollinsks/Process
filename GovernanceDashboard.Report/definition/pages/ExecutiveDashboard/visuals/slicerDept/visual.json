@@ -1,0 +1,38 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/1.0.0/schema.json",
+  "name": "slicerDept",
+  "position": {
+    "x": 1030,
+    "y": 330,
+    "z": 24,
+    "width": 240,
+    "height": 100,
+    "tabOrder": 24000
+  },
+  "visual": {
+    "visualType": "slicer",
+    "query": {
+      "queryState": {
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "ProcessConfiguration"
+                    }
+                  },
+                  "Property": "Department"
+                }
+              },
+              "queryRef": "ProcessConfiguration.Department",
+              "nativeQueryRef": "Department"
+            }
+          ]
+        }
+      }
+    },
+    "objects": {}
+  }
+}
