@@ -73,29 +73,45 @@ table SystemUsers
 		sourceColumn: EnvironmentURL
 		lineageTag: 33333333-3333-3333-3333-30000000000c
 
+	column EnvironmentName
+		dataType: string
+		summarizeBy: none
+		sourceColumn: EnvironmentName
+		lineageTag: 33333333-3333-3333-3333-30000000000d
+
 	partition SystemUsers = m
 		mode: import
 		source =
 			let
-			    Source = OData.Feed(
-			        #"BaseURL" & "systemusers?$select=systemuserid,fullname,firstname,lastname,"
-			            & "internalemailaddress,domainname,isdisabled,title,azureactivedirectoryobjectid",
-			        null,
-			        [Implementation = "2.0", ODataVersion = 4]
-			    ),
-			    RenamedColumns = Table.RenameColumns(Source, {
-			        {"systemuserid", "UserID"}, {"fullname", "FullName"},
-			        {"firstname", "FirstName"}, {"lastname", "LastName"},
-			        {"internalemailaddress", "Email"}, {"domainname", "DomainName"},
-			        {"isdisabled", "IsDisabled"}, {"title", "JobTitle"},
-			        {"azureactivedirectoryobjectid", "AzureADObjectID"}
-			    }, MissingField.Ignore),
-			    AddUserStatus = Table.AddColumn(RenamedColumns, "UserStatus", each
-			        if [IsDisabled] = true then "Disabled" else "Active", type text),
-			    AddDisplayLabel = Table.AddColumn(AddUserStatus, "UserDisplayLabel", each
-			        let name = if [FullName] <> null and [FullName] <> "" then [FullName] else "Unknown",
-			            email = if [Email] <> null and [Email] <> "" then " (" & [Email] & ")" else ""
-			        in name & email, type text),
-			    AddEnvironment = Table.AddColumn(AddDisplayLabel, "EnvironmentURL", each #"EnvironmentURL", type text)
+			    Envs = Environments,
+			    AllUsers = Table.Combine(
+			        List.Transform(
+			            Table.ToRecords(Envs),
+			            (env) => let
+			                BaseURL = "https://" & env[EnvironmentURL] & "/api/data/v9.2/",
+			                Source = OData.Feed(
+			                    BaseURL & "systemusers?$select=systemuserid,fullname,firstname,lastname,"
+			                        & "internalemailaddress,domainname,isdisabled,title,azureactivedirectoryobjectid",
+			                    null,
+			                    [Implementation = "2.0", ODataVersion = 4]
+			                ),
+			                RenamedColumns = Table.RenameColumns(Source, {
+			                    {"systemuserid", "UserID"}, {"fullname", "FullName"},
+			                    {"firstname", "FirstName"}, {"lastname", "LastName"},
+			                    {"internalemailaddress", "Email"}, {"domainname", "DomainName"},
+			                    {"isdisabled", "IsDisabled"}, {"title", "JobTitle"},
+			                    {"azureactivedirectoryobjectid", "AzureADObjectID"}
+			                }, MissingField.Ignore),
+			                AddUserStatus = Table.AddColumn(RenamedColumns, "UserStatus", each
+			                    if [IsDisabled] = true then "Disabled" else "Active", type text),
+			                AddDisplayLabel = Table.AddColumn(AddUserStatus, "UserDisplayLabel", each
+			                    let name = if [FullName] <> null and [FullName] <> "" then [FullName] else "Unknown",
+			                        email = if [Email] <> null and [Email] <> "" then " (" & [Email] & ")" else ""
+			                    in name & email, type text),
+			                AddEnvironment = Table.AddColumn(AddDisplayLabel, "EnvironmentURL", each env[EnvironmentURL], type text),
+			                AddEnvName = Table.AddColumn(AddEnvironment, "EnvironmentName", each env[EnvironmentName], type text)
+			            in AddEnvName
+			        )
+			    )
 			in
-			    AddEnvironment
+			    AllUsers

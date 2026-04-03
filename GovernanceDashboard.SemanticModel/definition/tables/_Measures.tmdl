@@ -9,7 +9,7 @@ table _Measures
 		sourceColumn: MeasureHelper
 		lineageTag: 66666666-6666-6666-6666-600000000001
 
-	measure 'Total Environments' = DISTINCTCOUNT(CloudFlows[EnvironmentURL])
+	measure 'Total Environments' = COUNTROWS(Environments)
 		displayFolder: Core Metrics
 		lineageTag: aaaaaaaa-0001-0001-0001-000000000001
 

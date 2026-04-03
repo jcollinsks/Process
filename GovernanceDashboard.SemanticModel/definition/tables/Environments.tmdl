@@ -1,0 +1,18 @@
+table Environments
+	lineageTag: 77777777-7777-7777-7777-777777777777
+
+	column EnvironmentName
+		dataType: string
+		summarizeBy: none
+		sourceColumn: EnvironmentName
+		lineageTag: 77777777-7777-7777-7777-700000000001
+
+	column EnvironmentURL
+		dataType: string
+		summarizeBy: none
+		sourceColumn: EnvironmentURL
+		lineageTag: 77777777-7777-7777-7777-700000000002
+
+	partition Environments = m
+		mode: import
+		source = let Source = Table.FromRecords({[EnvironmentName = "Default", EnvironmentURL = "org0d734703.crm.dynamics.com"]}) in Source

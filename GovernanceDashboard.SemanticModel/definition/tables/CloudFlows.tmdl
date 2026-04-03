@@ -97,41 +97,57 @@ table CloudFlows
 		sourceColumn: IsInSolution
 		lineageTag: 11111111-1111-1111-1111-100000000010
 
+	column EnvironmentName
+		dataType: string
+		summarizeBy: none
+		sourceColumn: EnvironmentName
+		lineageTag: 11111111-1111-1111-1111-100000000011
+
 	partition CloudFlows = m
 		mode: import
 		source =
 			let
-			    Source = OData.Feed(
-			        #"BaseURL" & "workflows?$filter=category eq 5 and type eq 1"
-			            & "&$select=workflowid,name,description,category,statecode,statuscode,"
-			            & "_ownerid_value,createdon,modifiedon,primaryentity,clientdata,solutionid",
-			        null,
-			        [Implementation = "2.0", ODataVersion = 4]
-			    ),
-			    RenamedColumns = Table.RenameColumns(Source, {
-			        {"workflowid", "FlowID"}, {"name", "FlowName"},
-			        {"description", "FlowDescription"}, {"statecode", "StateCode"},
-			        {"statuscode", "StatusCode"}, {"_ownerid_value", "OwnerID"},
-			        {"createdon", "CreatedOn"}, {"modifiedon", "ModifiedOn"},
-			        {"primaryentity", "PrimaryEntity"}, {"clientdata", "ClientData"},
-			        {"solutionid", "SolutionID"}
-			    }, MissingField.Ignore),
-			    AddStateName = Table.AddColumn(RenamedColumns, "FlowState", each
-			        if [StateCode] = 0 then "Draft"
-			        else if [StateCode] = 1 then "Activated"
-			        else if [StateCode] = 2 then "Suspended"
-			        else "Unknown", type text),
-			    AddStatusName = Table.AddColumn(AddStateName, "FlowStatus", each
-			        if [StatusCode] = 1 then "Draft"
-			        else if [StatusCode] = 2 then "Activated"
-			        else "Other", type text),
-			    AddTriggerType = Table.AddColumn(AddStatusName, "TriggerType", each
-			        try let jsonData = Json.Document([ClientData]),
-			            properties = jsonData[properties], definition = properties[definition],
-			            triggers = Record.FieldNames(definition[triggers])
-			        in triggers{0} otherwise "Unknown", type text),
-			    AddEnvironment = Table.AddColumn(AddTriggerType, "EnvironmentURL", each #"EnvironmentURL", type text),
-			    AddSolutionFlag = Table.AddColumn(AddEnvironment, "IsInSolution", each
-			        try ([SolutionID] <> null and [SolutionID] <> "00000000-0000-0000-0000-000000000000") otherwise false, type logical)
+			    Envs = Environments,
+			    AllFlows = Table.Combine(
+			        List.Transform(
+			            Table.ToRecords(Envs),
+			            (env) => let
+			                BaseURL = "https://" & env[EnvironmentURL] & "/api/data/v9.2/",
+			                Source = OData.Feed(
+			                    BaseURL & "workflows?$filter=category eq 5 and type eq 1"
+			                        & "&$select=workflowid,name,description,category,statecode,statuscode,"
+			                        & "_ownerid_value,createdon,modifiedon,primaryentity,clientdata,solutionid",
+			                    null,
+			                    [Implementation = "2.0", ODataVersion = 4]
+			                ),
+			                RenamedColumns = Table.RenameColumns(Source, {
+			                    {"workflowid", "FlowID"}, {"name", "FlowName"},
+			                    {"description", "FlowDescription"}, {"statecode", "StateCode"},
+			                    {"statuscode", "StatusCode"}, {"_ownerid_value", "OwnerID"},
+			                    {"createdon", "CreatedOn"}, {"modifiedon", "ModifiedOn"},
+			                    {"primaryentity", "PrimaryEntity"}, {"clientdata", "ClientData"},
+			                    {"solutionid", "SolutionID"}
+			                }, MissingField.Ignore),
+			                AddStateName = Table.AddColumn(RenamedColumns, "FlowState", each
+			                    if [StateCode] = 0 then "Draft"
+			                    else if [StateCode] = 1 then "Activated"
+			                    else if [StateCode] = 2 then "Suspended"
+			                    else "Unknown", type text),
+			                AddStatusName = Table.AddColumn(AddStateName, "FlowStatus", each
+			                    if [StatusCode] = 1 then "Draft"
+			                    else if [StatusCode] = 2 then "Activated"
+			                    else "Other", type text),
+			                AddTriggerType = Table.AddColumn(AddStatusName, "TriggerType", each
+			                    try let jsonData = Json.Document([ClientData]),
+			                        properties = jsonData[properties], definition = properties[definition],
+			                        triggers = Record.FieldNames(definition[triggers])
+			                    in triggers{0} otherwise "Unknown", type text),
+			                AddEnvironment = Table.AddColumn(AddTriggerType, "EnvironmentURL", each env[EnvironmentURL], type text),
+			                AddEnvName = Table.AddColumn(AddEnvironment, "EnvironmentName", each env[EnvironmentName], type text),
+			                AddSolutionFlag = Table.AddColumn(AddEnvName, "IsInSolution", each
+			                    try ([SolutionID] <> null and [SolutionID] <> "00000000-0000-0000-0000-000000000000") otherwise false, type logical)
+			            in AddSolutionFlag
+			        )
+			    )
 			in
-			    AddSolutionFlag
+			    AllFlows
