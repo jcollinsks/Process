@@ -1,48 +1,30 @@
 // ============================================================================
-// Desktop Flows - Power Automate Desktop flows from Dataverse workflow table
+// Desktop Flows - Desktop flows via Dataverse Web API (OData)
 // ============================================================================
-// Dataverse entity: workflow (logical name)
-// Filtered to: category = 6 (Desktop Flow)
-//              type = 1 (Definition)
+// Uses OData.Feed - no TDS endpoint needed.
+// Dataverse entity: workflows
+// Filtered to: category eq 6 (Desktop Flow), type eq 1 (Definition)
 // ============================================================================
 
 let
     // -----------------------------------------------------------------------
     // CONNECTION - Update this URL to your Dataverse environment
     // -----------------------------------------------------------------------
-    EnvironmentURL = "yourorg.crm.dynamics.com",
+    EnvironmentURL = "org0d734703.crm.dynamics.com",
 
-    // Connect using native Dataverse connector
-    Source = CommonDataService.Database(EnvironmentURL),
+    BaseURL = "https://" & EnvironmentURL & "/api/data/v9.2/",
 
-    // Navigate to the workflow table
-    WorkflowTable = let
-        matchByItem = try Source{[Item="workflow"]}[Data],
-        matchBySearch = try Table.SelectRows(Source, each [Item] = "workflow"){0}[Data]
-    in
-        if matchByItem[HasError] = false then matchByItem[Value]
-        else if matchBySearch[HasError] = false then matchBySearch[Value]
-        else error "Could not find 'workflow' table. Check available table names in Power Query.",
-
-    // Filter to Desktop Flows (category = 6) and Definitions (type = 1)
-    FilteredFlows = Table.SelectRows(WorkflowTable, each
-        [category] = 6 and [type] = 1
+    // Query desktop flows: category=6, type=1
+    Source = OData.Feed(
+        BaseURL & "workflows?$filter=category eq 6 and type eq 1"
+            & "&$select=workflowid,name,description,statecode,statuscode,"
+            & "_ownerid_value,createdon,modifiedon",
+        null,
+        [Implementation = "2.0", ODataVersion = 4]
     ),
 
-    // Select relevant columns
-    SelectedColumns = Table.SelectColumns(FilteredFlows, {
-        "workflowid",
-        "name",
-        "description",
-        "statecode",
-        "statuscode",
-        "_ownerid_value",
-        "createdon",
-        "modifiedon"
-    }, MissingField.Ignore),
-
     // Rename columns
-    RenamedColumns = Table.RenameColumns(SelectedColumns, {
+    RenamedColumns = Table.RenameColumns(Source, {
         {"workflowid", "FlowID"},
         {"name", "FlowName"},
         {"description", "FlowDescription"},

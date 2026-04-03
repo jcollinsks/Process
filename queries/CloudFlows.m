@@ -1,61 +1,32 @@
 // ============================================================================
-// Cloud Flows - Power Automate Cloud Flows from Dataverse workflow table
+// Cloud Flows - Power Automate Cloud Flows via Dataverse Web API (OData)
 // ============================================================================
-// Dataverse entity: workflow (logical name)
-// Filtered to: category = 5 (Modern Flow / Cloud Flow)
-//              type = 1 (Definition, not Activation/Template)
+// Uses OData.Feed against the Dataverse Web API - no TDS endpoint needed.
+// Dataverse entity: workflows
+// Filtered to: category eq 5 (Cloud Flow) and type eq 1 (Definition)
 //
-// This query connects using the native Dataverse connector.
-// Replace "yourorg.crm.dynamics.com" with your actual environment URL.
-// For multiple environments, duplicate and union (see CombinedCloudFlows.m).
+// Replace "org0d734703.crm.dynamics.com" with your environment URL.
 // ============================================================================
 
 let
     // -----------------------------------------------------------------------
     // CONNECTION - Update this URL to your Dataverse environment
     // -----------------------------------------------------------------------
-    EnvironmentURL = "yourorg.crm.dynamics.com",
+    EnvironmentURL = "org0d734703.crm.dynamics.com",
 
-    // Connect using native Dataverse connector
-    Source = CommonDataService.Database(EnvironmentURL),
+    BaseURL = "https://" & EnvironmentURL & "/api/data/v9.2/",
 
-    // Navigate to the workflow table
-    // The connector may expose tables under different schemas depending
-    // on environment config. This finds the table regardless of schema.
-    WorkflowTable = let
-        // Try direct name match first (works in most environments)
-        matchByItem = try Source{[Item="workflow"]}[Data],
-        // Fallback: search all schemas for the workflow table
-        matchBySearch = try Table.SelectRows(Source, each [Item] = "workflow"){0}[Data]
-    in
-        if matchByItem[HasError] = false then matchByItem[Value]
-        else if matchBySearch[HasError] = false then matchBySearch[Value]
-        else error "Could not find 'workflow' table. Open Power Query, click "
-            & "CommonDataService.Database source, and check the available table names.",
-
-    // Filter to Cloud Flows only (category = 5) and Definitions (type = 1)
-    FilteredFlows = Table.SelectRows(WorkflowTable, each
-        [category] = 5 and [type] = 1
+    // Query cloud flows: category=5 (Modern Flow), type=1 (Definition)
+    Source = OData.Feed(
+        BaseURL & "workflows?$filter=category eq 5 and type eq 1"
+            & "&$select=workflowid,name,description,category,statecode,statuscode,"
+            & "_ownerid_value,createdon,modifiedon,primaryentity,clientdata,solutionid",
+        null,
+        [Implementation = "2.0", ODataVersion = 4]
     ),
 
-    // Select relevant columns
-    SelectedColumns = Table.SelectColumns(FilteredFlows, {
-        "workflowid",
-        "name",
-        "description",
-        "category",
-        "statecode",
-        "statuscode",
-        "_ownerid_value",
-        "createdon",
-        "modifiedon",
-        "primaryentity",
-        "clientdata",
-        "solutionid"
-    }, MissingField.Ignore),
-
     // Rename columns for clarity
-    RenamedColumns = Table.RenameColumns(SelectedColumns, {
+    RenamedColumns = Table.RenameColumns(Source, {
         {"workflowid", "FlowID"},
         {"name", "FlowName"},
         {"description", "FlowDescription"},
@@ -103,7 +74,7 @@ let
 
     // Add IsInSolution flag
     AddSolutionFlag = Table.AddColumn(AddEnvironment, "IsInSolution", each
-        [SolutionID] <> null and [SolutionID] <> "00000000-0000-0000-0000-000000000000"
+        try ([SolutionID] <> null and [SolutionID] <> "00000000-0000-0000-0000-000000000000") otherwise false
     , type logical),
 
     // Set data types

@@ -1,47 +1,30 @@
 // ============================================================================
-// System Users - User details from Dataverse systemuser table
+// System Users - User details via Dataverse Web API (OData)
 // ============================================================================
-// Dataverse entity: systemuser
+// Uses OData.Feed - no TDS endpoint needed.
+// Dataverse entity: systemusers
 // Purpose: Map OwnerID (GUID) to actual user emails and display names
-//
-// This resolves the object ID issue - flows show owner as a GUID,
-// this table provides the human-readable email and name.
 // ============================================================================
 
 let
     // -----------------------------------------------------------------------
     // CONNECTION - Update this URL to your Dataverse environment
     // -----------------------------------------------------------------------
-    EnvironmentURL = "yourorg.crm.dynamics.com",
+    EnvironmentURL = "org0d734703.crm.dynamics.com",
 
-    // Connect using native Dataverse connector
-    Source = CommonDataService.Database(EnvironmentURL),
+    BaseURL = "https://" & EnvironmentURL & "/api/data/v9.2/",
 
-    // Navigate to the systemuser table
-    SystemUserTable = let
-        matchByItem = try Source{[Item="systemuser"]}[Data],
-        matchBySearch = try Table.SelectRows(Source, each [Item] = "systemuser"){0}[Data]
-    in
-        if matchByItem[HasError] = false then matchByItem[Value]
-        else if matchBySearch[HasError] = false then matchBySearch[Value]
-        else error "Could not find 'systemuser' table. Check available table names in Power Query.",
-
-    // Select relevant columns
-    SelectedColumns = Table.SelectColumns(SystemUserTable, {
-        "systemuserid",
-        "fullname",
-        "firstname",
-        "lastname",
-        "internalemailaddress",
-        "domainname",
-        "isdisabled",
-        "title",
-        "businessunitid",
-        "azureactivedirectoryobjectid"
-    }, MissingField.Ignore),
+    // Query system users
+    Source = OData.Feed(
+        BaseURL & "systemusers?$select=systemuserid,fullname,firstname,lastname,"
+            & "internalemailaddress,domainname,isdisabled,title,"
+            & "azureactivedirectoryobjectid",
+        null,
+        [Implementation = "2.0", ODataVersion = 4]
+    ),
 
     // Rename columns for clarity
-    RenamedColumns = Table.RenameColumns(SelectedColumns, {
+    RenamedColumns = Table.RenameColumns(Source, {
         {"systemuserid", "UserID"},
         {"fullname", "FullName"},
         {"firstname", "FirstName"},
@@ -50,7 +33,6 @@ let
         {"domainname", "DomainName"},
         {"isdisabled", "IsDisabled"},
         {"title", "JobTitle"},
-        {"businessunitid", "BusinessUnitID"},
         {"azureactivedirectoryobjectid", "AzureADObjectID"}
     }, MissingField.Ignore),
 
@@ -68,13 +50,6 @@ let
         in
             name & email
     , type text),
-
-    // Filter out system accounts (optional - uncomment to exclude)
-    // FilterSystemAccounts = Table.SelectRows(AddDisplayLabel, each
-    //     not Text.Contains(Text.Lower([Email]), "system") and
-    //     not Text.Contains(Text.Lower([FullName]), "system") and
-    //     [Email] <> null and [Email] <> ""
-    // ),
 
     // Add environment source
     AddEnvironment = Table.AddColumn(AddDisplayLabel, "EnvironmentURL", each EnvironmentURL, type text),

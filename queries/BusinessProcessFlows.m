@@ -1,54 +1,30 @@
 // ============================================================================
-// Business Process Flows - BPFs from Dataverse workflow table
+// Business Process Flows - BPFs via Dataverse Web API (OData)
 // ============================================================================
-// Dataverse entity: workflow (logical name)
-// Filtered to: category = 4 (Business Process Flow)
-//              type = 1 (Definition)
-//
-// These are the structured business process flows in Dataverse,
-// separate from Cloud Flows (category 5).
+// Uses OData.Feed - no TDS endpoint needed.
+// Dataverse entity: workflows
+// Filtered to: category eq 4 (Business Process Flow), type eq 1 (Definition)
 // ============================================================================
 
 let
     // -----------------------------------------------------------------------
     // CONNECTION - Update this URL to your Dataverse environment
     // -----------------------------------------------------------------------
-    EnvironmentURL = "yourorg.crm.dynamics.com",
+    EnvironmentURL = "org0d734703.crm.dynamics.com",
 
-    // Connect using native Dataverse connector
-    Source = CommonDataService.Database(EnvironmentURL),
+    BaseURL = "https://" & EnvironmentURL & "/api/data/v9.2/",
 
-    // Navigate to the workflow table
-    WorkflowTable = let
-        matchByItem = try Source{[Item="workflow"]}[Data],
-        matchBySearch = try Table.SelectRows(Source, each [Item] = "workflow"){0}[Data]
-    in
-        if matchByItem[HasError] = false then matchByItem[Value]
-        else if matchBySearch[HasError] = false then matchBySearch[Value]
-        else error "Could not find 'workflow' table. Check available table names in Power Query.",
-
-    // Filter to Business Process Flows (category = 4) and Definitions (type = 1)
-    FilteredBPFs = Table.SelectRows(WorkflowTable, each
-        [category] = 4 and [type] = 1
+    // Query BPFs: category=4, type=1
+    Source = OData.Feed(
+        BaseURL & "workflows?$filter=category eq 4 and type eq 1"
+            & "&$select=workflowid,name,description,category,statecode,statuscode,"
+            & "_ownerid_value,createdon,modifiedon,primaryentity,solutionid",
+        null,
+        [Implementation = "2.0", ODataVersion = 4]
     ),
 
-    // Select relevant columns
-    SelectedColumns = Table.SelectColumns(FilteredBPFs, {
-        "workflowid",
-        "name",
-        "description",
-        "category",
-        "statecode",
-        "statuscode",
-        "_ownerid_value",
-        "createdon",
-        "modifiedon",
-        "primaryentity",
-        "solutionid"
-    }, MissingField.Ignore),
-
     // Rename columns
-    RenamedColumns = Table.RenameColumns(SelectedColumns, {
+    RenamedColumns = Table.RenameColumns(Source, {
         {"workflowid", "ProcessID"},
         {"name", "ProcessName"},
         {"description", "ProcessDescription"},

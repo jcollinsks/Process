@@ -1,61 +1,39 @@
 // ============================================================================
-// Flow Runs - Power Automate flow execution history from flowsession table
+// Flow Runs - Flow execution history via Dataverse Web API (OData)
 // ============================================================================
-// Dataverse entity: flowsession (logical name)
-// Contains: run status, start/end times, errors, duration
+// Uses OData.Feed - no TDS endpoint needed.
+// Dataverse entity: flowsessions
 //
-// IMPORTANT: This table can be very large. Consider adding date filters
-// to limit the data pulled (see DateFilter section below).
+// IMPORTANT: This table can be very large. The $filter limits to recent data.
+// Adjust the DaysToLoad variable to control how much history is pulled.
 // ============================================================================
 
 let
     // -----------------------------------------------------------------------
     // CONNECTION - Update this URL to your Dataverse environment
     // -----------------------------------------------------------------------
-    EnvironmentURL = "yourorg.crm.dynamics.com",
+    EnvironmentURL = "org0d734703.crm.dynamics.com",
 
     // -----------------------------------------------------------------------
     // DATE FILTER - Adjust to control data volume
     // Default: last 90 days. Increase for more history.
     // -----------------------------------------------------------------------
     DaysToLoad = 90,
-    CutoffDate = Date.AddDays(DateTime.LocalNow(), -DaysToLoad),
+    CutoffDate = DateTime.ToText(Date.AddDays(DateTime.LocalNow(), -DaysToLoad), "yyyy-MM-ddTHH:mm:ssZ"),
 
-    // Connect using native Dataverse connector
-    Source = CommonDataService.Database(EnvironmentURL),
+    BaseURL = "https://" & EnvironmentURL & "/api/data/v9.2/",
 
-    // Navigate to the flowsession table
-    FlowSessionTable = let
-        matchByItem = try Source{[Item="flowsession"]}[Data],
-        matchBySearch = try Table.SelectRows(Source, each [Item] = "flowsession"){0}[Data]
-    in
-        if matchByItem[HasError] = false then matchByItem[Value]
-        else if matchBySearch[HasError] = false then matchBySearch[Value]
-        else error "Could not find 'flowsession' table. Check available table names in Power Query.",
-
-    // Apply date filter to limit data volume
-    DateFiltered = Table.SelectRows(FlowSessionTable, each
-        [createdon] >= CutoffDate
+    // Query flow sessions with date filter
+    Source = OData.Feed(
+        BaseURL & "flowsessions?$filter=createdon ge " & CutoffDate
+            & "&$select=flowsessionid,name,_regardingobjectid_value,statuscode,"
+            & "statecode,startedon,completedon,errorcode,errormessage,createdon",
+        null,
+        [Implementation = "2.0", ODataVersion = 4]
     ),
 
-    // Select relevant columns
-    SelectedColumns = Table.SelectColumns(DateFiltered, {
-        "flowsessionid",
-        "name",
-        "_regardingobjectid_value",
-        "statuscode",
-        "statecode",
-        "startedon",
-        "completedon",
-        "errorcode",
-        "errormessage",
-        "createdon",
-        "context",
-        "gateway"
-    }, MissingField.Ignore),
-
     // Rename columns for clarity
-    RenamedColumns = Table.RenameColumns(SelectedColumns, {
+    RenamedColumns = Table.RenameColumns(Source, {
         {"flowsessionid", "RunID"},
         {"name", "RunName"},
         {"_regardingobjectid_value", "FlowID"},
@@ -65,9 +43,7 @@ let
         {"completedon", "CompletedOn"},
         {"errorcode", "ErrorCode"},
         {"errormessage", "ErrorMessage"},
-        {"createdon", "CreatedOn"},
-        {"context", "RunContext"},
-        {"gateway", "Gateway"}
+        {"createdon", "CreatedOn"}
     }, MissingField.Ignore),
 
     // Add run status description
