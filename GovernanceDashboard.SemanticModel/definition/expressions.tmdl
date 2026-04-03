@@ -1,7 +1,5 @@
 expression EnvironmentURL = "org0d734703.crm.dynamics.com"
 	lineageTag: a1b2c3d4-0001-0001-0001-000000000001
-	queryGroup: Parameters
 
 expression BaseURL = "https://" & #"EnvironmentURL" & "/api/data/v9.2/"
 	lineageTag: a1b2c3d4-0001-0001-0001-000000000002
-	queryGroup: Parameters
