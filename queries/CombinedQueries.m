@@ -1,27 +1,27 @@
 // ============================================================================
-// Combined Queries - Dynamic multi-environment data via OData
+// Combined Queries - Multi-environment data via OData
 // ============================================================================
-// Iterates over the Environments table and pulls data from each.
+// Lists your environment URLs directly below, then pulls and unions
+// cloud flow data from each one.
 //
-// SETUP:
-// 1. Edit the Environments query with your actual environment URLs
-// 2. In Power BI: File > Options > Global > Security >
-//    Check "Allow ... dynamic data sources"
-// 3. Use this query as-is, or split into separate queries below.
+// If you only have ONE environment, you do NOT need this query.
+// Just use CloudFlows, FlowRuns, and SystemUsers directly.
 //
-// NOTE: If you only have ONE environment, you do NOT need this file.
-//       Just use CloudFlows, FlowRuns, SystemUsers directly.
-//
-// If you have MULTIPLE environments but do NOT want dynamic sources,
-// duplicate each query per environment, update the URL in each,
-// and union them with Table.Combine. Example at the bottom of this file.
+// To add environments: add URLs to the EnvironmentURLs list below.
 // ============================================================================
 
 let
-    Envs = Environments,
-    EnvURLs = Envs[EnvironmentURL],
+    // -----------------------------------------------------------------------
+    // ENVIRONMENT LIST - Add your Dataverse environment URLs here
+    // -----------------------------------------------------------------------
+    EnvironmentURLs = {
+        "org0d734703.crm.dynamics.com"
+        // Add more environments by uncommenting / adding lines:
+        // ,"org-dev.crm.dynamics.com"
+        // ,"org-test.crm.dynamics.com"
+    },
 
-    // ----- Fetch Cloud Flows from all environments -----
+    // ----- Fetch Cloud Flows from each environment -----
     GetFlows = (envUrl as text) =>
         let
             BaseURL = "https://" & envUrl & "/api/data/v9.2/",
@@ -36,7 +36,7 @@ let
         in
             AddEnv,
 
-    AllFlows = List.Transform(EnvURLs, each GetFlows(_)),
+    AllFlows = List.Transform(EnvironmentURLs, each GetFlows(_)),
     CombinedFlows = Table.Combine(AllFlows),
 
     Renamed = Table.RenameColumns(CombinedFlows, {
@@ -51,19 +51,3 @@ let
     }, MissingField.Ignore)
 in
     Renamed
-
-// ============================================================================
-// ALTERNATIVE: If you do NOT want dynamic data sources, create separate
-// queries for each environment and combine them manually.
-//
-// Create a new query named "AllCloudFlows" with:
-//
-//   let
-//       Prod = CloudFlows_Prod,
-//       Dev = CloudFlows_Dev,
-//       Combined = Table.Combine({Prod, Dev})
-//   in
-//       Combined
-//
-// Do the same for FlowRuns and SystemUsers.
-// ============================================================================
