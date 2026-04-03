@@ -1,0 +1,73 @@
+table ProcessConfiguration
+	lineageTag: 44444444-4444-4444-4444-444444444444
+
+	column FlowName
+		dataType: string
+		summarizeBy: none
+		sourceColumn: FlowName
+		lineageTag: 44444444-4444-4444-4444-400000000001
+
+	column BusinessProcess
+		dataType: string
+		summarizeBy: none
+		sourceColumn: BusinessProcess
+		lineageTag: 44444444-4444-4444-4444-400000000002
+
+	column ProcessCategory
+		dataType: string
+		summarizeBy: none
+		sourceColumn: ProcessCategory
+		lineageTag: 44444444-4444-4444-4444-400000000003
+
+	column Department
+		dataType: string
+		summarizeBy: none
+		sourceColumn: Department
+		lineageTag: 44444444-4444-4444-4444-400000000004
+
+	column MinutesSavedPerRun
+		dataType: double
+		summarizeBy: sum
+		sourceColumn: MinutesSavedPerRun
+		lineageTag: 44444444-4444-4444-4444-400000000005
+
+	column RiskCategory
+		dataType: string
+		summarizeBy: none
+		sourceColumn: RiskCategory
+		lineageTag: 44444444-4444-4444-4444-400000000006
+
+	column RiskReductionScore
+		dataType: int64
+		summarizeBy: sum
+		sourceColumn: RiskReductionScore
+		lineageTag: 44444444-4444-4444-4444-400000000007
+
+	column ProcessOwner
+		dataType: string
+		summarizeBy: none
+		sourceColumn: ProcessOwner
+		lineageTag: 44444444-4444-4444-4444-400000000008
+
+	column Notes
+		dataType: string
+		summarizeBy: none
+		sourceColumn: Notes
+		lineageTag: 44444444-4444-4444-4444-400000000009
+
+	partition ProcessConfiguration = m
+		mode: import
+		source =
+			let
+			    Source = Table.FromRecords({
+			        [FlowName = "(Enter your flow name)", BusinessProcess = "(Enter process)", ProcessCategory = "General", Department = "General", MinutesSavedPerRun = 15, RiskCategory = "Medium", RiskReductionScore = 5, ProcessOwner = "owner@yourorg.com", Notes = "Sample - replace with your data"]
+			    }),
+			    TypedTable = Table.TransformColumnTypes(Source, {
+			        {"FlowName", type text}, {"BusinessProcess", type text},
+			        {"ProcessCategory", type text}, {"Department", type text},
+			        {"MinutesSavedPerRun", type number}, {"RiskCategory", type text},
+			        {"RiskReductionScore", Int64.Type}, {"ProcessOwner", type text},
+			        {"Notes", type text}
+			    })
+			in
+			    TypedTable

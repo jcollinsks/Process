@@ -1,0 +1,16 @@
+relationship CloudFlows_FlowRuns
+	fromColumn: FlowRuns.FlowID
+	toColumn: CloudFlows.FlowID
+	crossFilteringBehavior: bothDirections
+
+relationship CloudFlows_SystemUsers
+	fromColumn: CloudFlows.OwnerID
+	toColumn: SystemUsers.UserID
+
+relationship CloudFlows_ProcessConfig
+	fromColumn: CloudFlows.FlowName
+	toColumn: ProcessConfiguration.FlowName
+
+relationship FlowRuns_DateTable
+	fromColumn: FlowRuns.RunDate
+	toColumn: DateTable.Date

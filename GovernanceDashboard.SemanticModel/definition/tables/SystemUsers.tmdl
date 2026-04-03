@@ -1,0 +1,101 @@
+table SystemUsers
+	lineageTag: 33333333-3333-3333-3333-333333333333
+
+	column UserID
+		dataType: string
+		summarizeBy: none
+		sourceColumn: UserID
+		lineageTag: 33333333-3333-3333-3333-300000000001
+
+	column FullName
+		dataType: string
+		summarizeBy: none
+		sourceColumn: FullName
+		lineageTag: 33333333-3333-3333-3333-300000000002
+
+	column FirstName
+		dataType: string
+		summarizeBy: none
+		sourceColumn: FirstName
+		lineageTag: 33333333-3333-3333-3333-300000000003
+
+	column LastName
+		dataType: string
+		summarizeBy: none
+		sourceColumn: LastName
+		lineageTag: 33333333-3333-3333-3333-300000000004
+
+	column Email
+		dataType: string
+		summarizeBy: none
+		sourceColumn: Email
+		lineageTag: 33333333-3333-3333-3333-300000000005
+
+	column DomainName
+		dataType: string
+		summarizeBy: none
+		sourceColumn: DomainName
+		lineageTag: 33333333-3333-3333-3333-300000000006
+
+	column IsDisabled
+		dataType: boolean
+		summarizeBy: none
+		sourceColumn: IsDisabled
+		lineageTag: 33333333-3333-3333-3333-300000000007
+
+	column JobTitle
+		dataType: string
+		summarizeBy: none
+		sourceColumn: JobTitle
+		lineageTag: 33333333-3333-3333-3333-300000000008
+
+	column AzureADObjectID
+		dataType: string
+		summarizeBy: none
+		sourceColumn: AzureADObjectID
+		lineageTag: 33333333-3333-3333-3333-300000000009
+
+	column UserStatus
+		dataType: string
+		summarizeBy: none
+		sourceColumn: UserStatus
+		lineageTag: 33333333-3333-3333-3333-30000000000a
+
+	column UserDisplayLabel
+		dataType: string
+		summarizeBy: none
+		sourceColumn: UserDisplayLabel
+		lineageTag: 33333333-3333-3333-3333-30000000000b
+
+	column EnvironmentURL
+		dataType: string
+		summarizeBy: none
+		sourceColumn: EnvironmentURL
+		lineageTag: 33333333-3333-3333-3333-30000000000c
+
+	partition SystemUsers = m
+		mode: import
+		source =
+			let
+			    Source = OData.Feed(
+			        #"BaseURL" & "systemusers?$select=systemuserid,fullname,firstname,lastname,"
+			            & "internalemailaddress,domainname,isdisabled,title,azureactivedirectoryobjectid",
+			        null,
+			        [Implementation = "2.0", ODataVersion = 4]
+			    ),
+			    RenamedColumns = Table.RenameColumns(Source, {
+			        {"systemuserid", "UserID"}, {"fullname", "FullName"},
+			        {"firstname", "FirstName"}, {"lastname", "LastName"},
+			        {"internalemailaddress", "Email"}, {"domainname", "DomainName"},
+			        {"isdisabled", "IsDisabled"}, {"title", "JobTitle"},
+			        {"azureactivedirectoryobjectid", "AzureADObjectID"}
+			    }, MissingField.Ignore),
+			    AddUserStatus = Table.AddColumn(RenamedColumns, "UserStatus", each
+			        if [IsDisabled] = true then "Disabled" else "Active", type text),
+			    AddDisplayLabel = Table.AddColumn(AddUserStatus, "UserDisplayLabel", each
+			        let name = if [FullName] <> null and [FullName] <> "" then [FullName] else "Unknown",
+			            email = if [Email] <> null and [Email] <> "" then " (" & [Email] & ")" else ""
+			        in name & email, type text),
+			    AddEnvironment = Table.AddColumn(AddDisplayLabel, "EnvironmentURL", each #"EnvironmentURL", type text)
+			in
+			    AddEnvironment

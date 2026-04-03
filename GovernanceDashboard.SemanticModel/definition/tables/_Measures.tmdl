@@ -1,0 +1,254 @@
+table _Measures
+	lineageTag: 66666666-6666-6666-6666-666666666666
+	isHidden
+
+	column MeasureHelper
+		dataType: int64
+		isHidden
+		summarizeBy: none
+		sourceColumn: MeasureHelper
+		lineageTag: 66666666-6666-6666-6666-600000000001
+
+	measure 'Total Environments' = DISTINCTCOUNT(CloudFlows[EnvironmentURL])
+		displayFolder: Core Metrics
+		lineageTag: aaaaaaaa-0001-0001-0001-000000000001
+
+	measure 'Total Cloud Flows' = COUNTROWS(CloudFlows)
+		displayFolder: Core Metrics
+		lineageTag: aaaaaaaa-0001-0001-0001-000000000002
+
+	measure 'Total Active Flows' = CALCULATE(COUNTROWS(CloudFlows), CloudFlows[FlowState] = "Activated")
+		displayFolder: Core Metrics
+		lineageTag: aaaaaaaa-0001-0001-0001-000000000003
+
+	measure 'Total Draft Flows' = CALCULATE(COUNTROWS(CloudFlows), CloudFlows[FlowState] = "Draft")
+		displayFolder: Core Metrics
+		lineageTag: aaaaaaaa-0001-0001-0001-000000000004
+
+	measure 'Total Suspended Flows' = CALCULATE(COUNTROWS(CloudFlows), CloudFlows[FlowState] = "Suspended")
+		displayFolder: Core Metrics
+		lineageTag: aaaaaaaa-0001-0001-0001-000000000005
+
+	measure 'Active Flow %' = DIVIDE([Total Active Flows], [Total Cloud Flows], 0)
+		formatString: 0.0%
+		displayFolder: Core Metrics
+		lineageTag: aaaaaaaa-0001-0001-0001-000000000006
+
+	measure 'Flows in Solutions' = CALCULATE(COUNTROWS(CloudFlows), CloudFlows[IsInSolution] = TRUE())
+		displayFolder: Core Metrics
+		lineageTag: aaaaaaaa-0001-0001-0001-000000000007
+
+	measure 'Solution Coverage' = DIVIDE([Flows in Solutions], [Total Cloud Flows], 0)
+		formatString: 0.0%
+		displayFolder: Core Metrics
+		lineageTag: aaaaaaaa-0001-0001-0001-000000000008
+
+	measure 'Unique Flow Owners' = DISTINCTCOUNT(CloudFlows[OwnerID])
+		displayFolder: Core Metrics
+		lineageTag: aaaaaaaa-0001-0001-0001-000000000009
+
+	measure 'Mapped Processes' = DISTINCTCOUNT(ProcessConfiguration[BusinessProcess])
+		displayFolder: Core Metrics
+		lineageTag: aaaaaaaa-0001-0001-0001-00000000000a
+
+	measure 'Total Flow Runs' = COUNTROWS(FlowRuns)
+		displayFolder: Flow Runs
+		lineageTag: aaaaaaaa-0002-0002-0002-000000000001
+
+	measure 'Succeeded Runs' = CALCULATE(COUNTROWS(FlowRuns), FlowRuns[StatusCategory] = "Succeeded")
+		displayFolder: Flow Runs
+		lineageTag: aaaaaaaa-0002-0002-0002-000000000002
+
+	measure 'Failed Runs' = CALCULATE(COUNTROWS(FlowRuns), FlowRuns[StatusCategory] = "Failed")
+		displayFolder: Flow Runs
+		lineageTag: aaaaaaaa-0002-0002-0002-000000000003
+
+	measure 'Cancelled Runs' = CALCULATE(COUNTROWS(FlowRuns), FlowRuns[StatusCategory] = "Cancelled")
+		displayFolder: Flow Runs
+		lineageTag: aaaaaaaa-0002-0002-0002-000000000004
+
+	measure 'Timed Out Runs' = CALCULATE(COUNTROWS(FlowRuns), FlowRuns[StatusCategory] = "Timed Out")
+		displayFolder: Flow Runs
+		lineageTag: aaaaaaaa-0002-0002-0002-000000000005
+
+	measure 'Success Rate' = DIVIDE([Succeeded Runs], [Total Flow Runs], 0)
+		formatString: 0.0%
+		displayFolder: Flow Runs
+		lineageTag: aaaaaaaa-0002-0002-0002-000000000006
+
+	measure 'Failure Rate' = DIVIDE([Failed Runs], [Total Flow Runs], 0)
+		formatString: 0.0%
+		displayFolder: Flow Runs
+		lineageTag: aaaaaaaa-0002-0002-0002-000000000007
+
+	measure 'Avg Duration (Min)' = AVERAGE(FlowRuns[DurationMinutes])
+		formatString: 0.0
+		displayFolder: Flow Runs
+		lineageTag: aaaaaaaa-0002-0002-0002-000000000008
+
+	measure 'Median Duration (Min)' = MEDIAN(FlowRuns[DurationMinutes])
+		formatString: 0.0
+		displayFolder: Flow Runs
+		lineageTag: aaaaaaaa-0002-0002-0002-000000000009
+
+	measure 'P95 Duration (Min)' = PERCENTILE.INC(FlowRuns[DurationMinutes], 0.95)
+		formatString: 0.0
+		displayFolder: Flow Runs
+		lineageTag: aaaaaaaa-0002-0002-0002-00000000000a
+
+	measure 'Total Run Hours' = DIVIDE(SUM(FlowRuns[DurationSeconds]), 3600, 0)
+		formatString: #,##0.0
+		displayFolder: Flow Runs
+		lineageTag: aaaaaaaa-0002-0002-0002-00000000000b
+
+	measure 'Daily Runs' = CALCULATE(COUNTROWS(FlowRuns), LASTDATE(DateTable[Date]))
+		displayFolder: Flow Runs
+		lineageTag: aaaaaaaa-0002-0002-0002-00000000000c
+
+	measure 'Rolling 7d Avg Runs' = AVERAGEX(DATESINPERIOD(DateTable[Date], MAX(DateTable[Date]), -7, DAY), [Daily Runs])
+		formatString: 0.0
+		displayFolder: Flow Runs
+		lineageTag: aaaaaaaa-0002-0002-0002-00000000000d
+
+	measure 'Business Hours Runs' = CALCULATE(COUNTROWS(FlowRuns), FlowRuns[IsBusinessHours] = TRUE())
+		displayFolder: Flow Runs
+		lineageTag: aaaaaaaa-0002-0002-0002-00000000000e
+
+	measure 'Total Minutes Saved' = ```
+		SUMX(
+		    FlowRuns,
+		    IF(
+		        FlowRuns[StatusCategory] = "Succeeded",
+		        VAR FlowName = LOOKUPVALUE(CloudFlows[FlowName], CloudFlows[FlowID], FlowRuns[FlowID])
+		        VAR ConfigMinutes = LOOKUPVALUE(ProcessConfiguration[MinutesSavedPerRun], ProcessConfiguration[FlowName], FlowName)
+		        RETURN IF(NOT ISBLANK(ConfigMinutes), ConfigMinutes, 15),
+		        0
+		    )
+		)
+		```
+		displayFolder: Time Savings
+		lineageTag: aaaaaaaa-0003-0003-0003-000000000001
+
+	measure 'Total Hours Saved' = DIVIDE([Total Minutes Saved], 60, 0)
+		formatString: #,##0.0
+		displayFolder: Time Savings
+		lineageTag: aaaaaaaa-0003-0003-0003-000000000002
+
+	measure 'Total Days Saved' = DIVIDE([Total Hours Saved], 8, 0)
+		formatString: #,##0.0
+		displayFolder: Time Savings
+		lineageTag: aaaaaaaa-0003-0003-0003-000000000003
+
+	measure 'FTE Equivalent' = DIVIDE([Total Hours Saved], 2080, 0)
+		formatString: 0.00
+		displayFolder: Time Savings
+		lineageTag: aaaaaaaa-0003-0003-0003-000000000004
+
+	measure 'Cost Savings' = ```
+		VAR HourlyCost = 50
+		RETURN [Total Hours Saved] * HourlyCost
+		```
+		formatString: $#,##0
+		displayFolder: Time Savings
+		lineageTag: aaaaaaaa-0003-0003-0003-000000000005
+
+	measure 'Monthly Cost Savings' = CALCULATE([Cost Savings], DATESMTD(DateTable[Date]))
+		formatString: $#,##0
+		displayFolder: Time Savings
+		lineageTag: aaaaaaaa-0003-0003-0003-000000000006
+
+	measure 'Annual Savings Projection' = [Monthly Cost Savings] * 12
+		formatString: $#,##0
+		displayFolder: Time Savings
+		lineageTag: aaaaaaaa-0003-0003-0003-000000000007
+
+	measure 'Cumulative Hours Saved' = CALCULATE([Total Hours Saved], FILTER(ALL(DateTable[Date]), DateTable[Date] <= MAX(DateTable[Date])))
+		formatString: #,##0.0
+		displayFolder: Time Savings
+		lineageTag: aaaaaaaa-0003-0003-0003-000000000008
+
+	measure 'Value Per Run' = DIVIDE([Cost Savings], [Succeeded Runs], 0)
+		formatString: $#,##0.00
+		displayFolder: Time Savings
+		lineageTag: aaaaaaaa-0003-0003-0003-000000000009
+
+	measure 'Risk Reduction Value' = ```
+		SUMX(
+		    ProcessConfiguration,
+		    VAR RiskScore = ProcessConfiguration[RiskReductionScore]
+		    VAR RiskCategoryVal = SWITCH(ProcessConfiguration[RiskCategory],
+		        "Critical", 10000, "High", 5000, "Medium", 1000, "Low", 200, 0)
+		    VAR _FlowName = ProcessConfiguration[FlowName]
+		    VAR SuccessfulRuns = CALCULATE(COUNTROWS(FlowRuns),
+		        FlowRuns[StatusCategory] = "Succeeded", CloudFlows[FlowName] = _FlowName)
+		    RETURN SuccessfulRuns * 0.05 * RiskCategoryVal * (RiskScore / 10)
+		)
+		```
+		formatString: $#,##0
+		displayFolder: Risk
+		lineageTag: aaaaaaaa-0004-0004-0004-000000000001
+
+	measure 'Total Automation Value' = [Cost Savings] + [Risk Reduction Value]
+		formatString: $#,##0
+		displayFolder: Risk
+		lineageTag: aaaaaaaa-0004-0004-0004-000000000002
+
+	measure 'High Risk Processes' = CALCULATE(COUNTROWS(ProcessConfiguration), ProcessConfiguration[RiskCategory] IN {"High", "Critical"})
+		displayFolder: Risk
+		lineageTag: aaaaaaaa-0004-0004-0004-000000000003
+
+	measure 'Governance Score' = ```
+		VAR SolutionScore = [Solution Coverage] * 25
+		VAR ProcessCoverage = DIVIDE(COUNTROWS(ProcessConfiguration), [Total Cloud Flows], 0)
+		VAR ProcessScore = ProcessCoverage * 25
+		VAR ReliabilityScore = [Success Rate] * 25
+		VAR ActiveScore = [Active Flow %] * 25
+		RETURN ROUND(SolutionScore + ProcessScore + ReliabilityScore + ActiveScore, 0)
+		```
+		formatString: 0
+		displayFolder: Governance
+		lineageTag: aaaaaaaa-0005-0005-0005-000000000001
+
+	measure 'Governance Label' = ```
+		VAR Score = [Governance Score]
+		RETURN IF(Score >= 90, "Excellent",
+		    IF(Score >= 75, "Good",
+		    IF(Score >= 60, "Needs Improvement",
+		    IF(Score >= 40, "At Risk", "Critical"))))
+		```
+		displayFolder: Governance
+		lineageTag: aaaaaaaa-0005-0005-0005-000000000002
+
+	measure 'Flows Per Owner' = DIVIDE([Total Cloud Flows], [Unique Flow Owners], 0)
+		formatString: 0.0
+		displayFolder: Governance
+		lineageTag: aaaaaaaa-0005-0005-0005-000000000003
+
+	measure 'Stale Flows' = CALCULATE(COUNTROWS(CloudFlows), CloudFlows[FlowState] = "Activated", FILTER(CloudFlows, DATEDIFF(CloudFlows[ModifiedOn], NOW(), DAY) > 90))
+		displayFolder: Governance
+		lineageTag: aaaaaaaa-0005-0005-0005-000000000004
+
+	measure 'Runs YTD' = CALCULATE(COUNTROWS(FlowRuns), DATESYTD(DateTable[Date]))
+		displayFolder: Time Intelligence
+		lineageTag: aaaaaaaa-0006-0006-0006-000000000001
+
+	measure 'Runs MTD' = CALCULATE(COUNTROWS(FlowRuns), DATESMTD(DateTable[Date]))
+		displayFolder: Time Intelligence
+		lineageTag: aaaaaaaa-0006-0006-0006-000000000002
+
+	measure 'Runs Prior Month' = CALCULATE(COUNTROWS(FlowRuns), DATEADD(DateTable[Date], -1, MONTH))
+		displayFolder: Time Intelligence
+		lineageTag: aaaaaaaa-0006-0006-0006-000000000003
+
+	measure 'Runs MoM %' = ```
+		VAR Curr = [Runs MTD]
+		VAR Prev = [Runs Prior Month]
+		RETURN DIVIDE(Curr - Prev, Prev, 0)
+		```
+		formatString: 0.0%
+		displayFolder: Time Intelligence
+		lineageTag: aaaaaaaa-0006-0006-0006-000000000004
+
+	partition _Measures = m
+		mode: import
+		source = let Source = Table.FromRecords({[MeasureHelper = 1]}) in Source

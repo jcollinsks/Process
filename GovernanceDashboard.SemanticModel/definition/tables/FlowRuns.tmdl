@@ -1,0 +1,175 @@
+table FlowRuns
+	lineageTag: 22222222-2222-2222-2222-222222222222
+
+	column RunID
+		dataType: string
+		summarizeBy: none
+		sourceColumn: RunID
+		lineageTag: 22222222-2222-2222-2222-200000000001
+
+	column RunName
+		dataType: string
+		summarizeBy: none
+		sourceColumn: RunName
+		lineageTag: 22222222-2222-2222-2222-200000000002
+
+	column FlowID
+		dataType: string
+		summarizeBy: none
+		sourceColumn: FlowID
+		lineageTag: 22222222-2222-2222-2222-200000000003
+
+	column RunStatusCode
+		dataType: int64
+		summarizeBy: none
+		sourceColumn: RunStatusCode
+		lineageTag: 22222222-2222-2222-2222-200000000004
+
+	column StartedOn
+		dataType: dateTime
+		summarizeBy: none
+		sourceColumn: StartedOn
+		lineageTag: 22222222-2222-2222-2222-200000000005
+
+	column CompletedOn
+		dataType: dateTime
+		summarizeBy: none
+		sourceColumn: CompletedOn
+		lineageTag: 22222222-2222-2222-2222-200000000006
+
+	column ErrorCode
+		dataType: string
+		summarizeBy: none
+		sourceColumn: ErrorCode
+		lineageTag: 22222222-2222-2222-2222-200000000007
+
+	column ErrorMessage
+		dataType: string
+		summarizeBy: none
+		sourceColumn: ErrorMessage
+		lineageTag: 22222222-2222-2222-2222-200000000008
+
+	column CreatedOn
+		dataType: dateTime
+		summarizeBy: none
+		sourceColumn: CreatedOn
+		lineageTag: 22222222-2222-2222-2222-200000000009
+
+	column RunStatus
+		dataType: string
+		summarizeBy: none
+		sourceColumn: RunStatus
+		lineageTag: 22222222-2222-2222-2222-20000000000a
+
+	column StatusCategory
+		dataType: string
+		summarizeBy: none
+		sourceColumn: StatusCategory
+		lineageTag: 22222222-2222-2222-2222-20000000000b
+
+	column DurationSeconds
+		dataType: double
+		summarizeBy: sum
+		sourceColumn: DurationSeconds
+		lineageTag: 22222222-2222-2222-2222-20000000000c
+
+	column DurationMinutes
+		dataType: double
+		summarizeBy: sum
+		sourceColumn: DurationMinutes
+		lineageTag: 22222222-2222-2222-2222-20000000000d
+
+	column RunDate
+		dataType: dateTime
+		summarizeBy: none
+		sourceColumn: RunDate
+		lineageTag: 22222222-2222-2222-2222-20000000000e
+
+	column RunHour
+		dataType: int64
+		summarizeBy: none
+		sourceColumn: RunHour
+		lineageTag: 22222222-2222-2222-2222-20000000000f
+
+	column DayOfWeek
+		dataType: string
+		summarizeBy: none
+		sourceColumn: DayOfWeek
+		lineageTag: 22222222-2222-2222-2222-200000000010
+
+	column IsBusinessHours
+		dataType: boolean
+		summarizeBy: none
+		sourceColumn: IsBusinessHours
+		lineageTag: 22222222-2222-2222-2222-200000000011
+
+	column ErrorCategory
+		dataType: string
+		summarizeBy: none
+		sourceColumn: ErrorCategory
+		lineageTag: 22222222-2222-2222-2222-200000000012
+
+	column EnvironmentURL
+		dataType: string
+		summarizeBy: none
+		sourceColumn: EnvironmentURL
+		lineageTag: 22222222-2222-2222-2222-200000000013
+
+	partition FlowRuns = m
+		mode: import
+		source =
+			let
+			    DaysToLoad = 90,
+			    CutoffDate = DateTime.ToText(Date.AddDays(DateTime.LocalNow(), -DaysToLoad), "yyyy-MM-ddTHH:mm:ssZ"),
+			    Source = OData.Feed(
+			        #"BaseURL" & "flowsessions?$filter=createdon ge " & CutoffDate
+			            & "&$select=flowsessionid,name,_regardingobjectid_value,statuscode,"
+			            & "statecode,startedon,completedon,errorcode,errormessage,createdon",
+			        null,
+			        [Implementation = "2.0", ODataVersion = 4]
+			    ),
+			    RenamedColumns = Table.RenameColumns(Source, {
+			        {"flowsessionid", "RunID"}, {"name", "RunName"},
+			        {"_regardingobjectid_value", "FlowID"}, {"statuscode", "RunStatusCode"},
+			        {"startedon", "StartedOn"}, {"completedon", "CompletedOn"},
+			        {"errorcode", "ErrorCode"}, {"errormessage", "ErrorMessage"},
+			        {"createdon", "CreatedOn"}
+			    }, MissingField.Ignore),
+			    AddRunStatus = Table.AddColumn(RenamedColumns, "RunStatus", each
+			        if [RunStatusCode] = 4 then "Succeeded"
+			        else if [RunStatusCode] = 8 then "Failed"
+			        else if [RunStatusCode] = 9 then "Faulted"
+			        else if [RunStatusCode] = 7 then "Cancelled"
+			        else if [RunStatusCode] = 10 then "TimedOut"
+			        else if [RunStatusCode] = 2 then "Running"
+			        else "Other", type text),
+			    AddStatusCategory = Table.AddColumn(AddRunStatus, "StatusCategory", each
+			        if [RunStatusCode] = 4 then "Succeeded"
+			        else if [RunStatusCode] = 8 or [RunStatusCode] = 9 then "Failed"
+			        else if [RunStatusCode] = 7 then "Cancelled"
+			        else if [RunStatusCode] = 10 then "Timed Out"
+			        else if [RunStatusCode] = 2 or [RunStatusCode] = 3 then "In Progress"
+			        else "Other", type text),
+			    AddDuration = Table.AddColumn(AddStatusCategory, "DurationSeconds", each
+			        try Duration.TotalSeconds([CompletedOn] - [StartedOn]) otherwise null, type number),
+			    AddDurationMinutes = Table.AddColumn(AddDuration, "DurationMinutes", each
+			        try [DurationSeconds] / 60 otherwise null, type number),
+			    AddRunDate = Table.AddColumn(AddDurationMinutes, "RunDate", each
+			        try DateTime.Date(DateTime.From([StartedOn])) otherwise null, type date),
+			    AddRunHour = Table.AddColumn(AddRunDate, "RunHour", each
+			        try Time.Hour(DateTime.Time(DateTime.From([StartedOn]))) otherwise null, Int64.Type),
+			    AddDayOfWeek = Table.AddColumn(AddRunHour, "DayOfWeek", each
+			        try Date.DayOfWeekName([RunDate]) otherwise null, type text),
+			    AddBusinessHours = Table.AddColumn(AddDayOfWeek, "IsBusinessHours", each
+			        try let dow = Date.DayOfWeek([RunDate], Day.Monday), hour = [RunHour]
+			        in (dow >= 0 and dow <= 4) and (hour >= 8 and hour < 18) otherwise null, type logical),
+			    AddErrorCategory = Table.AddColumn(AddBusinessHours, "ErrorCategory", each
+			        if [RunStatusCode] <> 8 and [RunStatusCode] <> 9 then null
+			        else if [ErrorCode] = null or [ErrorCode] = "" then "Uncategorized"
+			        else if Text.Contains(Text.Lower(Text.From([ErrorCode])), "timeout") then "Timeout"
+			        else if Text.Contains(Text.Lower(Text.From([ErrorCode])), "unauthorized") then "Authorization"
+			        else if Text.Contains(Text.Lower(Text.From([ErrorCode])), "throttl") then "Throttled"
+			        else "Other Error", type text),
+			    AddEnvironment = Table.AddColumn(AddErrorCategory, "EnvironmentURL", each #"EnvironmentURL", type text)
+			in
+			    AddEnvironment

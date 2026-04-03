@@ -1,0 +1,117 @@
+table DateTable
+	lineageTag: 55555555-5555-5555-5555-555555555555
+
+	column Date
+		dataType: dateTime
+		isKey: true
+		summarizeBy: none
+		sourceColumn: Date
+		lineageTag: 55555555-5555-5555-5555-500000000001
+
+	column Year
+		dataType: int64
+		summarizeBy: none
+		sourceColumn: Year
+		lineageTag: 55555555-5555-5555-5555-500000000002
+
+	column MonthNumber
+		dataType: int64
+		summarizeBy: none
+		sourceColumn: MonthNumber
+		lineageTag: 55555555-5555-5555-5555-500000000003
+
+	column MonthName
+		dataType: string
+		summarizeBy: none
+		sourceColumn: MonthName
+		sortByColumn: MonthNumber
+		lineageTag: 55555555-5555-5555-5555-500000000004
+
+	column MonthShort
+		dataType: string
+		summarizeBy: none
+		sourceColumn: MonthShort
+		sortByColumn: MonthNumber
+		lineageTag: 55555555-5555-5555-5555-500000000005
+
+	column Day
+		dataType: int64
+		summarizeBy: none
+		sourceColumn: Day
+		lineageTag: 55555555-5555-5555-5555-500000000006
+
+	column DayOfWeek
+		dataType: int64
+		summarizeBy: none
+		sourceColumn: DayOfWeek
+		lineageTag: 55555555-5555-5555-5555-500000000007
+
+	column DayName
+		dataType: string
+		summarizeBy: none
+		sourceColumn: DayName
+		sortByColumn: DayOfWeek
+		lineageTag: 55555555-5555-5555-5555-500000000008
+
+	column Quarter
+		dataType: int64
+		summarizeBy: none
+		sourceColumn: Quarter
+		lineageTag: 55555555-5555-5555-5555-500000000009
+
+	column QuarterLabel
+		dataType: string
+		summarizeBy: none
+		sourceColumn: QuarterLabel
+		sortByColumn: Quarter
+		lineageTag: 55555555-5555-5555-5555-50000000000a
+
+	column YearMonth
+		dataType: string
+		summarizeBy: none
+		sourceColumn: YearMonth
+		lineageTag: 55555555-5555-5555-5555-50000000000b
+
+	column YearQuarter
+		dataType: string
+		summarizeBy: none
+		sourceColumn: YearQuarter
+		lineageTag: 55555555-5555-5555-5555-50000000000c
+
+	column IsWeekend
+		dataType: boolean
+		summarizeBy: none
+		sourceColumn: IsWeekend
+		lineageTag: 55555555-5555-5555-5555-50000000000d
+
+	column FiscalYear
+		dataType: int64
+		summarizeBy: none
+		sourceColumn: FiscalYear
+		lineageTag: 55555555-5555-5555-5555-50000000000e
+
+	partition DateTable = m
+		mode: import
+		source =
+			let
+			    StartDate = Date.StartOfYear(Date.AddYears(DateTime.Date(DateTime.LocalNow()), -2)),
+			    EndDate = Date.EndOfYear(Date.AddYears(DateTime.Date(DateTime.LocalNow()), 1)),
+			    DateCount = Duration.Days(EndDate - StartDate) + 1,
+			    DateList = List.Dates(StartDate, DateCount, #duration(1, 0, 0, 0)),
+			    DateTable = Table.FromList(DateList, Splitter.SplitByNothing(), {"Date"}),
+			    TypedDate = Table.TransformColumnTypes(DateTable, {{"Date", type date}}),
+			    AddYear = Table.AddColumn(TypedDate, "Year", each Date.Year([Date]), Int64.Type),
+			    AddMonth = Table.AddColumn(AddYear, "MonthNumber", each Date.Month([Date]), Int64.Type),
+			    AddMonthName = Table.AddColumn(AddMonth, "MonthName", each Date.MonthName([Date]), type text),
+			    AddMonthShort = Table.AddColumn(AddMonthName, "MonthShort", each Text.Start(Date.MonthName([Date]), 3), type text),
+			    AddDay = Table.AddColumn(AddMonthShort, "Day", each Date.Day([Date]), Int64.Type),
+			    AddDayOfWeek = Table.AddColumn(AddDay, "DayOfWeek", each Date.DayOfWeek([Date], Day.Monday) + 1, Int64.Type),
+			    AddDayName = Table.AddColumn(AddDayOfWeek, "DayName", each Date.DayOfWeekName([Date]), type text),
+			    AddQuarter = Table.AddColumn(AddDayName, "Quarter", each Date.QuarterOfYear([Date]), Int64.Type),
+			    AddQuarterLabel = Table.AddColumn(AddQuarter, "QuarterLabel", each "Q" & Text.From(Date.QuarterOfYear([Date])), type text),
+			    AddYearMonth = Table.AddColumn(AddQuarterLabel, "YearMonth", each Text.From(Date.Year([Date])) & "-" & Text.PadStart(Text.From(Date.Month([Date])), 2, "0"), type text),
+			    AddYearQuarter = Table.AddColumn(AddYearMonth, "YearQuarter", each Text.From(Date.Year([Date])) & " Q" & Text.From(Date.QuarterOfYear([Date])), type text),
+			    AddIsWeekend = Table.AddColumn(AddYearQuarter, "IsWeekend", each Date.DayOfWeek([Date], Day.Monday) >= 5, type logical),
+			    AddFiscalYear = Table.AddColumn(AddIsWeekend, "FiscalYear", each if Date.Month([Date]) >= 7 then Date.Year([Date]) + 1 else Date.Year([Date]), Int64.Type)
+			in
+			    AddFiscalYear
