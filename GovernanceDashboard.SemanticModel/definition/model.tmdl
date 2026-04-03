@@ -1,6 +1,10 @@
 model Model
 	culture: en-US
 	defaultPowerBIDataSourceVersion: powerBI_V3
-	dataAccessOptions
-		legacyRedirects
-		returnErrorValuesAsNull
+
+ref table CloudFlows
+ref table FlowRuns
+ref table SystemUsers
+ref table ProcessConfiguration
+ref table DateTable
+ref table _Measures

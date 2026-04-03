@@ -23,11 +23,11 @@
                       "Entity": "CloudFlows"
                     }
                   },
-                  "Property": "FlowTriggerType"
+                  "Property": "TriggerType"
                 }
               },
-              "queryRef": "CloudFlows.FlowTriggerType",
-              "nativeQueryRef": "FlowTriggerType"
+              "queryRef": "CloudFlows.TriggerType",
+              "nativeQueryRef": "TriggerType"
             }
           ]
         },
