@@ -1,0 +1,57 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/1.0.0/schema.json",
+  "name": "barErrorCategories",
+  "position": {
+    "x": 20,
+    "y": 380,
+    "z": 0,
+    "width": 400,
+    "height": 300,
+    "tabOrder": 2
+  },
+  "visual": {
+    "visualType": "barChart",
+    "drillFilterOtherVisuals": true,
+    "query": {
+      "queryState": {
+        "Category": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "FlowRuns"
+                    }
+                  },
+                  "Property": "ErrorCategory"
+                }
+              },
+              "queryRef": "FlowRuns.ErrorCategory",
+              "nativeQueryRef": "ErrorCategory",
+              "active": true
+            }
+          ]
+        },
+        "Y": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Failed Runs"
+                }
+              },
+              "queryRef": "_Measures.Failed Runs",
+              "nativeQueryRef": "Failed Runs"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

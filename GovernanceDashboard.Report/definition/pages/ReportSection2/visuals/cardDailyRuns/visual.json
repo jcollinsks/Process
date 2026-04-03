@@ -1,13 +1,13 @@
 {
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/1.0.0/schema.json",
-  "name": "totalCloudFlows",
+  "name": "cardDailyRuns",
   "position": {
-    "x": 50,
-    "y": 60,
+    "x": 960,
+    "y": 520,
     "z": 0,
-    "width": 200,
+    "width": 280,
     "height": 120,
-    "tabOrder": 0
+    "tabOrder": 5
   },
   "visual": {
     "visualType": "card",
@@ -24,11 +24,11 @@
                       "Entity": "_Measures"
                     }
                   },
-                  "Property": "Total Cloud Flows"
+                  "Property": "Daily Runs"
                 }
               },
-              "queryRef": "_Measures.Total Cloud Flows",
-              "nativeQueryRef": "Total Cloud Flows"
+              "queryRef": "_Measures.Daily Runs",
+              "nativeQueryRef": "Daily Runs"
             }
           ]
         }

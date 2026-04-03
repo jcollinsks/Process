@@ -1,0 +1,71 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/1.0.0/schema.json",
+  "name": "lineRunsTrend",
+  "position": {
+    "x": 20,
+    "y": 60,
+    "z": 0,
+    "width": 750,
+    "height": 300,
+    "tabOrder": 0
+  },
+  "visual": {
+    "visualType": "lineChart",
+    "drillFilterOtherVisuals": true,
+    "query": {
+      "queryState": {
+        "Category": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "DateTable"
+                    }
+                  },
+                  "Property": "Date"
+                }
+              },
+              "queryRef": "DateTable.Date",
+              "nativeQueryRef": "Date",
+              "active": true
+            }
+          ]
+        },
+        "Y": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Total Flow Runs"
+                }
+              },
+              "queryRef": "_Measures.Total Flow Runs",
+              "nativeQueryRef": "Total Flow Runs"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Failed Runs"
+                }
+              },
+              "queryRef": "_Measures.Failed Runs",
+              "nativeQueryRef": "Failed Runs"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

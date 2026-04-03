@@ -1,0 +1,57 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/1.0.0/schema.json",
+  "name": "barRunsByHour",
+  "position": {
+    "x": 790,
+    "y": 60,
+    "z": 0,
+    "width": 470,
+    "height": 300,
+    "tabOrder": 1
+  },
+  "visual": {
+    "visualType": "columnChart",
+    "drillFilterOtherVisuals": true,
+    "query": {
+      "queryState": {
+        "Category": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "FlowRuns"
+                    }
+                  },
+                  "Property": "RunHour"
+                }
+              },
+              "queryRef": "FlowRuns.RunHour",
+              "nativeQueryRef": "RunHour",
+              "active": true
+            }
+          ]
+        },
+        "Y": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Total Flow Runs"
+                }
+              },
+              "queryRef": "_Measures.Total Flow Runs",
+              "nativeQueryRef": "Total Flow Runs"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

@@ -1,11 +1,11 @@
 {
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/1.0.0/schema.json",
-  "name": "totalCloudFlows",
+  "name": "cardRiskValue",
   "position": {
     "x": 50,
     "y": 60,
     "z": 0,
-    "width": 200,
+    "width": 250,
     "height": 120,
     "tabOrder": 0
   },
@@ -24,11 +24,11 @@
                       "Entity": "_Measures"
                     }
                   },
-                  "Property": "Total Cloud Flows"
+                  "Property": "Risk Reduction Value"
                 }
               },
-              "queryRef": "_Measures.Total Cloud Flows",
-              "nativeQueryRef": "Total Cloud Flows"
+              "queryRef": "_Measures.Risk Reduction Value",
+              "nativeQueryRef": "Risk Reduction Value"
             }
           ]
         }

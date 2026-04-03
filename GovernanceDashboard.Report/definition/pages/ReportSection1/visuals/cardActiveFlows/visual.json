@@ -1,13 +1,13 @@
 {
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/1.0.0/schema.json",
-  "name": "totalCloudFlows",
+  "name": "cardActiveFlows",
   "position": {
-    "x": 50,
+    "x": 270,
     "y": 60,
     "z": 0,
     "width": 200,
     "height": 120,
-    "tabOrder": 0
+    "tabOrder": 1
   },
   "visual": {
     "visualType": "card",
@@ -24,11 +24,11 @@
                       "Entity": "_Measures"
                     }
                   },
-                  "Property": "Total Cloud Flows"
+                  "Property": "Total Active Flows"
                 }
               },
-              "queryRef": "_Measures.Total Cloud Flows",
-              "nativeQueryRef": "Total Cloud Flows"
+              "queryRef": "_Measures.Total Active Flows",
+              "nativeQueryRef": "Total Active Flows"
             }
           ]
         }

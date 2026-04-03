@@ -1,6 +1,6 @@
 {
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/1.0.0/schema.json",
-  "name": "totalCloudFlows",
+  "name": "cardHoursSaved",
   "position": {
     "x": 50,
     "y": 60,
@@ -24,11 +24,11 @@
                       "Entity": "_Measures"
                     }
                   },
-                  "Property": "Total Cloud Flows"
+                  "Property": "Total Hours Saved"
                 }
               },
-              "queryRef": "_Measures.Total Cloud Flows",
-              "nativeQueryRef": "Total Cloud Flows"
+              "queryRef": "_Measures.Total Hours Saved",
+              "nativeQueryRef": "Total Hours Saved"
             }
           ]
         }

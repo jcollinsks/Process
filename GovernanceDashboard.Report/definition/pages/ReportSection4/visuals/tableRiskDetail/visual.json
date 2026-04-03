@@ -1,0 +1,100 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/1.0.0/schema.json",
+  "name": "tableRiskDetail",
+  "position": {
+    "x": 20,
+    "y": 520,
+    "z": 0,
+    "width": 1240,
+    "height": 180,
+    "tabOrder": 6
+  },
+  "visual": {
+    "visualType": "pivotTable",
+    "drillFilterOtherVisuals": true,
+    "query": {
+      "queryState": {
+        "Rows": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "ProcessConfiguration"
+                    }
+                  },
+                  "Property": "FlowName"
+                }
+              },
+              "queryRef": "ProcessConfiguration.FlowName",
+              "nativeQueryRef": "FlowName",
+              "active": true
+            },
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "ProcessConfiguration"
+                    }
+                  },
+                  "Property": "RiskCategory"
+                }
+              },
+              "queryRef": "ProcessConfiguration.RiskCategory",
+              "nativeQueryRef": "RiskCategory",
+              "active": true
+            }
+          ]
+        },
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Risk Reduction Value"
+                }
+              },
+              "queryRef": "_Measures.Risk Reduction Value",
+              "nativeQueryRef": "Risk Reduction Value"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Failure Rate"
+                }
+              },
+              "queryRef": "_Measures.Failure Rate",
+              "nativeQueryRef": "Failure Rate"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Success Rate"
+                }
+              },
+              "queryRef": "_Measures.Success Rate",
+              "nativeQueryRef": "Success Rate"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

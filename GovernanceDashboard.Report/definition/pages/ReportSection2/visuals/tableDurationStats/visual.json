@@ -1,0 +1,99 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/1.0.0/schema.json",
+  "name": "tableDurationStats",
+  "position": {
+    "x": 440,
+    "y": 380,
+    "z": 0,
+    "width": 500,
+    "height": 300,
+    "tabOrder": 3
+  },
+  "visual": {
+    "visualType": "pivotTable",
+    "drillFilterOtherVisuals": true,
+    "query": {
+      "queryState": {
+        "Rows": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "CloudFlows"
+                    }
+                  },
+                  "Property": "FlowName"
+                }
+              },
+              "queryRef": "CloudFlows.FlowName",
+              "nativeQueryRef": "FlowName",
+              "active": true
+            }
+          ]
+        },
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Avg Duration (Min)"
+                }
+              },
+              "queryRef": "_Measures.Avg Duration (Min)",
+              "nativeQueryRef": "Avg Duration (Min)"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Median Duration (Min)"
+                }
+              },
+              "queryRef": "_Measures.Median Duration (Min)",
+              "nativeQueryRef": "Median Duration (Min)"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "P95 Duration (Min)"
+                }
+              },
+              "queryRef": "_Measures.P95 Duration (Min)",
+              "nativeQueryRef": "P95 Duration (Min)"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Total Run Hours"
+                }
+              },
+              "queryRef": "_Measures.Total Run Hours",
+              "nativeQueryRef": "Total Run Hours"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

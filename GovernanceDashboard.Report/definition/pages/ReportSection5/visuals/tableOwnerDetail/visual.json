@@ -1,0 +1,99 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/1.0.0/schema.json",
+  "name": "tableOwnerDetail",
+  "position": {
+    "x": 20,
+    "y": 520,
+    "z": 0,
+    "width": 1240,
+    "height": 180,
+    "tabOrder": 6
+  },
+  "visual": {
+    "visualType": "pivotTable",
+    "drillFilterOtherVisuals": true,
+    "query": {
+      "queryState": {
+        "Rows": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "SystemUsers"
+                    }
+                  },
+                  "Property": "UserEmail"
+                }
+              },
+              "queryRef": "SystemUsers.UserEmail",
+              "nativeQueryRef": "UserEmail",
+              "active": true
+            }
+          ]
+        },
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Total Cloud Flows"
+                }
+              },
+              "queryRef": "_Measures.Total Cloud Flows",
+              "nativeQueryRef": "Total Cloud Flows"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Total Active Flows"
+                }
+              },
+              "queryRef": "_Measures.Total Active Flows",
+              "nativeQueryRef": "Total Active Flows"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Success Rate"
+                }
+              },
+              "queryRef": "_Measures.Success Rate",
+              "nativeQueryRef": "Success Rate"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Total Flow Runs"
+                }
+              },
+              "queryRef": "_Measures.Total Flow Runs",
+              "nativeQueryRef": "Total Flow Runs"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

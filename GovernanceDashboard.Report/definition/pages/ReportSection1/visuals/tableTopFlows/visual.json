@@ -1,0 +1,85 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/1.0.0/schema.json",
+  "name": "tableTopFlows",
+  "position": {
+    "x": 600,
+    "y": 380,
+    "z": 0,
+    "width": 620,
+    "height": 300,
+    "tabOrder": 8
+  },
+  "visual": {
+    "visualType": "pivotTable",
+    "drillFilterOtherVisuals": true,
+    "query": {
+      "queryState": {
+        "Rows": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "CloudFlows"
+                    }
+                  },
+                  "Property": "FlowName"
+                }
+              },
+              "queryRef": "CloudFlows.FlowName",
+              "nativeQueryRef": "FlowName",
+              "active": true
+            }
+          ]
+        },
+        "Values": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Total Flow Runs"
+                }
+              },
+              "queryRef": "_Measures.Total Flow Runs",
+              "nativeQueryRef": "Total Flow Runs"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Success Rate"
+                }
+              },
+              "queryRef": "_Measures.Success Rate",
+              "nativeQueryRef": "Success Rate"
+            },
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Avg Duration (Min)"
+                }
+              },
+              "queryRef": "_Measures.Avg Duration (Min)",
+              "nativeQueryRef": "Avg Duration (Min)"
+            }
+          ]
+        }
+      }
+    }
+  }
+}

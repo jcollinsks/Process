@@ -1,20 +1,39 @@
 {
   "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/1.0.0/schema.json",
-  "name": "totalCloudFlows",
+  "name": "barFlowsByOwner",
   "position": {
-    "x": 50,
-    "y": 60,
+    "x": 20,
+    "y": 200,
     "z": 0,
-    "width": 200,
-    "height": 120,
-    "tabOrder": 0
+    "width": 600,
+    "height": 300,
+    "tabOrder": 4
   },
   "visual": {
-    "visualType": "card",
+    "visualType": "barChart",
     "drillFilterOtherVisuals": true,
     "query": {
       "queryState": {
-        "Values": {
+        "Category": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "SystemUsers"
+                    }
+                  },
+                  "Property": "UserEmail"
+                }
+              },
+              "queryRef": "SystemUsers.UserEmail",
+              "nativeQueryRef": "UserEmail",
+              "active": true
+            }
+          ]
+        },
+        "Y": {
           "projections": [
             {
               "field": {

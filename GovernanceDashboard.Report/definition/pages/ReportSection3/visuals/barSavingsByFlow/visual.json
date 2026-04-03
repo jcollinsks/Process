@@ -1,0 +1,57 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/1.0.0/schema.json",
+  "name": "barSavingsByFlow",
+  "position": {
+    "x": 660,
+    "y": 200,
+    "z": 0,
+    "width": 600,
+    "height": 300,
+    "tabOrder": 6
+  },
+  "visual": {
+    "visualType": "barChart",
+    "drillFilterOtherVisuals": true,
+    "query": {
+      "queryState": {
+        "Category": {
+          "projections": [
+            {
+              "field": {
+                "Column": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "CloudFlows"
+                    }
+                  },
+                  "Property": "FlowName"
+                }
+              },
+              "queryRef": "CloudFlows.FlowName",
+              "nativeQueryRef": "FlowName",
+              "active": true
+            }
+          ]
+        },
+        "Y": {
+          "projections": [
+            {
+              "field": {
+                "Measure": {
+                  "Expression": {
+                    "SourceRef": {
+                      "Entity": "_Measures"
+                    }
+                  },
+                  "Property": "Cost Savings"
+                }
+              },
+              "queryRef": "_Measures.Cost Savings",
+              "nativeQueryRef": "Cost Savings"
+            }
+          ]
+        }
+      }
+    }
+  }
+}
