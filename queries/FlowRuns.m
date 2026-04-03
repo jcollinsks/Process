@@ -25,7 +25,13 @@ let
     Source = CommonDataService.Database(EnvironmentURL),
 
     // Navigate to the flowsession table
-    FlowSessionTable = Source{[Schema="dbo", Item="flowsession"]}[Data],
+    FlowSessionTable = let
+        matchByItem = try Source{[Item="flowsession"]}[Data],
+        matchBySearch = try Table.SelectRows(Source, each [Item] = "flowsession"){0}[Data]
+    in
+        if matchByItem[HasError] = false then matchByItem[Value]
+        else if matchBySearch[HasError] = false then matchBySearch[Value]
+        else error "Could not find 'flowsession' table. Check available table names in Power Query.",
 
     // Apply date filter to limit data volume
     DateFiltered = Table.SelectRows(FlowSessionTable, each

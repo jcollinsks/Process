@@ -20,7 +20,18 @@ let
     Source = CommonDataService.Database(EnvironmentURL),
 
     // Navigate to the workflow table
-    WorkflowTable = Source{[Schema="dbo", Item="workflow"]}[Data],
+    // The connector may expose tables under different schemas depending
+    // on environment config. This finds the table regardless of schema.
+    WorkflowTable = let
+        // Try direct name match first (works in most environments)
+        matchByItem = try Source{[Item="workflow"]}[Data],
+        // Fallback: search all schemas for the workflow table
+        matchBySearch = try Table.SelectRows(Source, each [Item] = "workflow"){0}[Data]
+    in
+        if matchByItem[HasError] = false then matchByItem[Value]
+        else if matchBySearch[HasError] = false then matchBySearch[Value]
+        else error "Could not find 'workflow' table. Open Power Query, click "
+            & "CommonDataService.Database source, and check the available table names.",
 
     // Filter to Cloud Flows only (category = 5) and Definitions (type = 1)
     FilteredFlows = Table.SelectRows(WorkflowTable, each

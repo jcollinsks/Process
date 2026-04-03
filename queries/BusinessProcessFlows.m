@@ -19,7 +19,13 @@ let
     Source = CommonDataService.Database(EnvironmentURL),
 
     // Navigate to the workflow table
-    WorkflowTable = Source{[Schema="dbo", Item="workflow"]}[Data],
+    WorkflowTable = let
+        matchByItem = try Source{[Item="workflow"]}[Data],
+        matchBySearch = try Table.SelectRows(Source, each [Item] = "workflow"){0}[Data]
+    in
+        if matchByItem[HasError] = false then matchByItem[Value]
+        else if matchBySearch[HasError] = false then matchBySearch[Value]
+        else error "Could not find 'workflow' table. Check available table names in Power Query.",
 
     // Filter to Business Process Flows (category = 4) and Definitions (type = 1)
     FilteredBPFs = Table.SelectRows(WorkflowTable, each

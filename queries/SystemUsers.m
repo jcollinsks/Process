@@ -18,7 +18,13 @@ let
     Source = CommonDataService.Database(EnvironmentURL),
 
     // Navigate to the systemuser table
-    SystemUserTable = Source{[Schema="dbo", Item="systemuser"]}[Data],
+    SystemUserTable = let
+        matchByItem = try Source{[Item="systemuser"]}[Data],
+        matchBySearch = try Table.SelectRows(Source, each [Item] = "systemuser"){0}[Data]
+    in
+        if matchByItem[HasError] = false then matchByItem[Value]
+        else if matchBySearch[HasError] = false then matchBySearch[Value]
+        else error "Could not find 'systemuser' table. Check available table names in Power Query.",
 
     // Select relevant columns
     SelectedColumns = Table.SelectColumns(SystemUserTable, {
